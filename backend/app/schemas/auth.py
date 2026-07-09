@@ -9,9 +9,3 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-
-
-class CurrentUser(BaseModel):
-    email: EmailStr
-    name: str
-    role: str

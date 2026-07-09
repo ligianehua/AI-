@@ -31,3 +31,8 @@ class PermissionDeniedError(DomainError):
 class NotFoundError(DomainError):
     code = "not_found"
     http_status = 404
+
+
+class ConflictError(DomainError):
+    code = "conflict"
+    http_status = 409

@@ -1,0 +1,415 @@
+# AI 销售助手 — 开发计划（PLAN.md）
+
+> 本文档是给 Claude Code 的执行蓝图。配套 `CLAUDE.md`（项目约定）。
+> 版本：v1.0 ｜ 日期：2026-07-10 ｜ 决策人：Li Jianhua
+
+---
+
+## 0. 一句话定义
+
+面向销售团队的 AI 工作台：用 LLM + 数据分析，覆盖 线索管理 → 客户洞察 → 商机跟进 → 话术推荐 →（P1）合同 / 预测 / 业绩 的全链路，把销售从"经验驱动"升级为"数据驱动"。
+
+## 1. 第一性原理拆解
+
+销售的本质只有两个变量：
+
+1. **注意力分配** —— 有限时间投给谁（哪个线索、哪个商机）
+2. **沟通质量** —— 每次接触说什么、怎么说
+
+所有 7 个模块都是这两个变量的杠杆：
+
+| 模块 | 作用于 | 本质 |
+|---|---|---|
+| 线索管理 + AI 评分 | 注意力分配 | 排序问题：谁最可能成交 |
+| 客户洞察 | 沟通质量 | 压缩"理解客户"的时间成本 |
+| 商机跟进 | 注意力分配 | 流程熵减：防遗忘、防停滞 |
+| 话术推荐 | 沟通质量 | 复制 top sales 的经验，边际成本趋零 |
+| 合同处理 | （非销售时间） | 压缩行政开销 |
+| 销售预测 | 管理决策 | pipeline 的概率加权 |
+| 业绩分析 | 管理决策 | 归因：什么行为导致成交 |
+
+**推论（决定优先级）**：离成交越近、对历史数据依赖越少的模块越先做。预测和业绩分析需要数据积累才有意义——系统上线第一天就做预测是自欺欺人，所以放 P1。
+
+**AI 的定位**：不替销售做决定，而是把"信息处理"和"经验获取"的成本打下来。每个 AI 输出必须附带理由（可解释），销售永远有最终否决权。
+
+## 2. 范围切分
+
+### P0 — 核心闭环（本计划主体，M0–M7）
+
+1. **线索管理**：录入 / Excel 导入 / AI 评分 / 状态流转 / 分配 / 转商机
+2. **客户洞察**：客户 360 档案、AI 画像、跟进时间线、AI 摘要
+3. **商机跟进**：阶段看板、跟进记录、AI 下一步建议、风险提醒
+4. **话术推荐**：话术库管理 + RAG 检索 + 基于客户上下文的实时生成
+
+### P1 — 第二阶段（M8–M11）
+
+5. **通用 AI 助手**：对话式查数（function calling 只读工具）。放 P1 的理由：它消费 P0 全部数据与工具，P0 没跑通它就是空壳
+6. **合同处理**：模板生成、要素抽取、风险条款审查
+7. **销售预测**：加权 pipeline 预测 + 趋势外推（标注置信度）
+8. **业绩分析**：团队/个人仪表盘 + AI 归因解读
+
+### P2 — 明确不做（现在）
+
+企微/钉钉/CRM 双向同步（架构预留 connector 接口）、语音转写、自动外呼、移动端 App、多租户 SaaS 化、多币种。先让闭环跑通，再谈花活。
+
+### 用户角色
+
+- **销售（sales）**：主用户，管自己的线索/商机/客户
+- **主管（manager）**：看团队全量数据 + 预测/业绩
+- **管理员（admin)**：用户/团队管理、话术库/知识库维护（模型配置走 `providers.yaml` 文件，不做 UI）
+
+## 3. 技术架构
+
+```
+┌─────────────────────────────────────────────────┐
+│  Frontend: Next.js (App Router, 最新稳定版) + TS │
+│  Tailwind + shadcn/ui + TanStack Query + ECharts│
+└───────────────────┬─────────────────────────────┘
+                    │ REST /api/v1 + SSE(流式)
+┌───────────────────┴─────────────────────────────┐
+│  Backend: FastAPI (Python 3.12+, async)         │
+│  ├── api/      路由层（薄）                       │
+│  ├── services/ 业务逻辑                          │
+│  ├── ai/       LLM 抽象层 + prompts + RAG        │
+│  └── tasks/    ARQ 异步任务（评分/画像/嵌入）      │
+└──────┬──────────────────┬───────────────────────┘
+       │                  │
+┌──────┴───────┐   ┌──────┴──────┐
+│ PostgreSQL 16│   │ Redis        │
+│ + pgvector   │   │ 缓存+任务队列 │
+└──────────────┘   └─────────────┘
+```
+
+### 技术选型与理由（决策记录，别翻案）
+
+| 决策 | 选择 | 理由 |
+|---|---|---|
+| 后端 | FastAPI + SQLAlchemy 2.0 async + Pydantic v2 + Alembic | AI/数据生态最全，async 原生支持 SSE 流式 |
+| 前端 | Next.js（最新稳定版）+ TypeScript + shadcn/ui + ECharts | 组件生态成熟；ECharts 对中文图表场景友好 |
+| 数据库 | PostgreSQL 16 + pgvector | 一库搞定关系 + 向量，MVP 阶段引入独立向量库是过度设计 |
+| 队列 | Redis + ARQ | 比 Celery 轻，async 原生；AI 任务全部异步化 |
+| LLM 网关 | **自建薄抽象层**（见 §5） | DeepSeek/Qwen/Kimi/GLM 全部 OpenAI 兼容协议，薄适配层足够；不直接依赖 LiteLLM（2026-03 其 PyPI 供应链攻击事件是警钟），但接口对齐，后期可换 Bifrost/Portkey |
+| Agent 编排 | 不用重框架 | P0 场景全部是"prompt + structured output + function calling"，LangGraph 等到 P1 有多步工作流再说。克制是美德 |
+| Embedding | Qwen text-embedding API（1024 维） | 中文质量好、免推理运维；MVP 不自托管嵌入模型 |
+| 认证 | JWT + RBAC 三角色 | 标准做法 |
+| 部署 | Docker Compose（dev/prod 同构） | 单机可跑，预留 K8s |
+
+### 非功能要求
+
+- **中文优先**：UI、AI 输出、错误信息全中文
+- **数据安全**：API key 只走环境变量；选用国内模型时数据不出境；`.env` 永不入库
+- **成本护栏**：所有 LLM 调用记账（`llm_calls` 表），支持每用户日 token 限额
+- **可解释**：AI 评分/建议必须输出结构化理由
+- **评测纪律**：每个 AI 场景建 golden set（≥20 条），prompt 改动必须跑回归；结构化字段用断言判分，生成质量用 LLM-as-judge。不做 eval 的 prompt 工程等于闭眼开车
+
+## 4. 数据模型（核心表）
+
+> 全部表带 `id (uuid pk)`, `created_at`, `updated_at`。软删除用 `deleted_at`。
+
+```
+users          id, name, email, hashed_password, role(sales|manager|admin), team_id, is_active
+teams          id, name        # 主管 = role=manager 且 team_id 匹配，不另设字段
+
+accounts       # 客户公司
+  id, name, industry, size, region, website, remark, owner_id
+  ai_profile jsonb        # AI 画像（结构见 §6.2）
+  ai_profile_updated_at
+
+contacts       # 联系人
+  id, account_id, name, title, phone, wechat, email
+  role_in_deal(decision_maker|influencer|user|gatekeeper), remark
+
+leads          # 线索
+  id, source(website|exhibition|referral|ads|cold_call|other), account_name, contact_name,
+  contact_phone, contact_wechat, industry, requirement_desc,
+  status(new|contacted|qualified|converted|invalid),
+  score int, score_detail jsonb,   # AI 评分 + 理由
+  owner_id, converted_account_id, converted_opportunity_id
+
+opportunities  # 商机（金额单位固定 CNY，不做多币种字段）
+  id, account_id, name, amount numeric,
+  stage(initial|need_confirmed|proposal|negotiation|won|lost),
+  probability int,   # 默认按阶段映射 10/30/50/70/100/0，可手改
+  expected_close_date, owner_id, lost_reason,
+  stage_history jsonb              # [{stage, entered_at, by}]
+
+activities     # 跟进记录（多态挂载）
+  id, related_type(lead|account|opportunity), related_id,
+  type(call|visit|wechat|email|meeting|other),
+  content text, next_action, next_action_date, owner_id
+
+scripts        # 话术库
+  id, category(opening|discovery|objection|pricing|closing|retention), scenario, content,
+  tags text[], embedding vector(1024), usage_count, created_by, is_active
+
+knowledge_docs # 企业知识库（产品资料/FAQ/案例）
+  id, title, status(processing|ready|failed)
+knowledge_chunks
+  id, doc_id, chunk_index, content, embedding vector(1024)
+
+llm_calls      # AI 调用审计（成本 + 可观测 + 反馈落点）
+  id, user_id, task_type(lead_scoring|account_profile|next_action|
+      script_gen|embedding), provider, model,
+  tokens_in, tokens_out, cost_estimate numeric, latency_ms,
+  status(ok|error|timeout), error_msg,
+  feedback smallint null   # 1 赞 / -1 踩（生成类任务的用户反馈）
+
+notifications  # 风险提醒（与 §6.3 三种风险一一对应）
+  id, user_id, type(stale_no_followup|stage_stuck|next_action_due),
+  title, body, related_type, related_id, read_at
+```
+
+P1 增表：`contracts`（合同 + 抽取要素 jsonb + 审查结果 jsonb）、`forecast_snapshots`（周度 pipeline 快照，预测的原料）。
+
+**权限规则（RBAC，在 service 层统一实施）**：sales 只能读写 `owner_id = 自己` 的数据；manager 可读全团队、可改分配；admin 全量 + 配置。
+
+## 5. LLM 多模型抽象层（`backend/app/ai/`）
+
+这是全项目的地基，M2 单独实现并测试。设计原则：**协议统一（OpenAI 兼容）、配置驱动、按任务路由、每次调用记账**。
+
+```
+ai/
+├── providers.yaml     # 模型注册表（不含密钥，密钥在 env）
+├── client.py          # LLMClient：chat() / chat_stream() / embed()
+├── router.py          # 任务类型 → 模型档位路由
+├── prompts/           # 所有 prompt 模板（jinja2），一场景一文件
+├── schemas.py         # 各任务的结构化输出 Pydantic 模型
+└── rag.py             # 检索：向量 + 关键词混合
+```
+
+`providers.yaml` 示例：
+
+```yaml
+providers:
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    api_key_env: DEEPSEEK_API_KEY
+    models: { fast: deepseek-v4-flash, strong: deepseek-v4-pro }
+  qwen:
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key_env: DASHSCOPE_API_KEY
+    models: { fast: qwen-flash, strong: qwen3.7-max, embedding: text-embedding-v4 }
+  # anthropic / openrouter 同构追加即可
+
+routing:                # 任务 → 档位（省钱的关键：分类抽取用 fast，生成用 strong）
+  lead_scoring:    { tier: fast,   temperature: 0.1, json: true }
+  account_profile: { tier: strong, temperature: 0.3, json: true }
+  next_action:     { tier: fast,   temperature: 0.3, json: true }
+  script_gen:      { tier: strong, temperature: 0.7, stream: true }
+  # P1 开通用助手时再追加 chat 路由
+
+default_provider: deepseek
+fallback_provider: qwen   # 主供应商 5xx/超时 → 自动降级重试一次
+```
+
+`client.py` 要求：统一用 `openai` SDK（改 `base_url`）；超时 60s、重试 2 次（指数退避）；结构化输出用 JSON mode + Pydantic 校验（校验失败自动重试一次并附错误提示）；每次调用写 `llm_calls`。Anthropic 原生协议留 adapter 接口，P0 不实现。
+
+## 6. P0 模块详细规格
+
+**API 通用约定**：列表接口统一支持 `page / page_size（默认 20，上限 100）/ sort（如 -score）`；错误响应统一 `{code, message, detail}`；时间 UTC 存储、前端按 Asia/Shanghai 展示；软删除数据默认过滤。
+
+### 6.1 线索管理 + AI 评分（M3）
+
+**用户故事**：销售每天打开系统，看到按分数排序的线索列表，知道先打给谁、为什么。
+
+API：
+```
+POST   /api/v1/leads                    创建
+GET    /api/v1/leads?status=&score_gte=&owner_id=&sort=-score   列表（分页）
+GET    /api/v1/leads/{id}               详情（含评分理由、跟进记录）
+PATCH  /api/v1/leads/{id}               更新/改状态
+POST   /api/v1/leads/import             Excel 导入（模板下载 + 错误行报告）
+POST   /api/v1/leads/{id}/score         触发/重算 AI 评分（异步）
+POST   /api/v1/leads/{id}/convert       转化 → 创建 account+contact+opportunity（事务）
+POST   /api/v1/leads/assign             批量分配（manager）
+```
+
+**查重（撞单防护）**：创建与导入时按 `contact_phone` / `account_name` 检测疑似重复，标记提示、不硬拦截（撞单裁决留给人）。
+
+**AI 评分逻辑（两层，输出 0–100 + 理由）**：
+- 规则层（0–40）：信息完整度（电话/微信/需求描述）、来源权重（转介绍 > 展会 > 广告）、行业匹配度——权重配置化，别写死
+- LLM 层（0–60）：`requirement_desc` + 跟进记录做语义意向判断，输出 `{intent_score, budget_signal, urgency, reasons[]}`
+- 触发时机：创建/导入后自动评分；线索新增跟进记录后自动重算；支持手动重算
+- 冷启动的诚实说明：没有成交数据校准前，评分是"专家规则 + 语义判断"，UI 上标注"参考分"。有 ≥100 条转化数据后再做校准（P1 加简单逻辑回归对照）
+
+验收标准：
+- [ ] Excel 导入 500 行 < 10s，错误行给出行号和原因
+- [ ] 评分异步完成后列表自动刷新（轮询即可，别为这个上 SSE）
+- [ ] 每条评分可展开看 `score_detail` 理由
+- [ ] 转化操作是事务：失败无脏数据
+- [ ] sales 看不到别人的线索（RBAC 测试）
+
+### 6.2 客户洞察 / 客户 360（M4）
+
+**用户故事**：拜访前 5 分钟打开客户页，AI 画像 + 时间线让销售快速进入状态。
+
+API：
+```
+GET    /api/v1/accounts / {id}          CRUD + 列表
+GET    /api/v1/accounts/{id}/timeline   全部跟进记录聚合（跨 lead/opportunity）
+POST   /api/v1/accounts/{id}/profile    生成/刷新 AI 画像（异步）
+POST   /api/v1/contacts / ...           联系人 CRUD
+```
+
+**AI 画像 `ai_profile` 结构**（Pydantic 强校验）：
+```json
+{
+  "company_overview": "…",
+  "pain_points": ["…"],
+  "decision_chain": [{"contact": "…", "role": "…", "attitude": "…"}],
+  "cooperation_stage_analysis": "…",
+  "risks": ["…"],
+  "suggestions": ["…"],
+  "confidence_note": "基于 N 条跟进记录，信息不足处已标注"
+}
+```
+输入 = account 字段 + contacts + 全部 activities。数据少时 AI 必须明说"信息不足"，禁止编造（prompt 里写死，eval 里验证）。
+
+验收标准：
+- [ ] 画像生成 < 30s（异步 + 进度提示），结构化渲染非纯文本墙
+- [ ] 时间线聚合正确（lead 转化前的记录也要挂进来）
+- [ ] 跟进记录 < 3 条时，画像明确提示信息不足而非硬编
+
+### 6.3 商机跟进（M5）
+
+**用户故事**：主管和销售在看板上一眼看清 pipeline；系统主动提醒"这单要凉了"。
+
+API：
+```
+GET    /api/v1/opportunities/kanban     按阶段分组（含金额汇总）
+POST   /api/v1/opportunities / {id}     CRUD
+PATCH  /api/v1/opportunities/{id}/stage 拖拽换阶段（记 stage_history；won/lost 必填原因/金额确认）
+GET    /api/v1/opportunities/{id}/next-actions   AI 下一步建议（3 条，可一键转任务）
+POST   /api/v1/activities               跟进记录 CRUD（挂 lead/account/opportunity）
+GET    /api/v1/notifications            风险提醒列表
+```
+
+**AI 下一步建议**：输入 = 阶段 + 最近 10 条跟进 + 停滞天数 + 画像摘要；输出 3 条具体可执行动作（`{action, reason, suggested_script_scenario}`），可跳转话术生成。
+
+**风险提醒（ARQ 定时任务，每日 08:00）**：
+- 商机 > X 天无跟进（默认 7，配置化）
+- 阶段停滞 > Y 天（默认 21）
+- `next_action_date` 到期未完成
+写入 `notifications` + 首页红点。
+
+验收标准：
+- [ ] 看板拖拽流畅，阶段金额/加权金额实时汇总
+- [ ] won/lost 强制填写原因（这是未来预测和归因的数据原料，不能省）
+- [ ] 停滞检测定时任务有单测（时间 mock）
+- [ ] AI 建议引用的是真实跟进内容（eval 验证不幻觉）
+
+### 6.4 话术推荐（M6）
+
+**用户故事**：销售遇到"客户嫌贵"，10 秒拿到 3 条结合本客户上下文的应对话术，直接复制到微信。
+
+API：
+```
+POST   /api/v1/scripts / CRUD           话术库管理（admin/manager）
+POST   /api/v1/scripts/search           混合检索（向量 + 关键词）
+POST   /api/v1/scripts/recommend        生成推荐：
+       body: { opportunity_id?, account_id?, scenario, channel(wechat|email|phone), user_hint? }
+       → SSE 流式返回 3 条候选 + 引用的库内话术来源
+POST   /api/v1/knowledge/docs           知识库上传（txt/md/docx → 存本地卷 data/uploads → 分块 → 嵌入，异步）
+```
+
+**生成管线**：`检索(scripts top-5 + knowledge top-3，向量+BM25 混合) → 融合客户上下文（画像+最近跟进）→ strong 模型生成 → 附来源引用`。channel 决定文风：微信短句口语化、邮件正式结构化。
+
+**冷启动硬性要求**：上线前必须由业务方灌入 ≥50 条真实优质话术。垃圾进垃圾出——这一条是项目成败点，写进上线 checklist。
+
+验收标准：
+- [ ] 推荐响应首 token < 3s（流式）
+- [ ] 生成结果标注参考了哪几条库内话术（可解释）
+- [ ] 无匹配话术时降级为纯生成并明示"库内无参考"
+- [ ] 一键复制；赞/踩反馈写入 `llm_calls.feedback`
+
+### 6.5 首页仪表盘 + 管理页（M7）
+
+- 仪表盘：我的今日待办（next_action 到期）、风险提醒、漏斗概览、本月成交额（sales 看自己 / manager 看团队）——纯聚合查询，不过度设计
+- 管理页（admin）：用户/团队管理 UI（话术库/知识库管理 UI 已在 M6 交付）
+
+## 7. P1 模块简要规格（M8–M11，P0 验收后再细化）
+
+- **M8 通用 AI 助手**：对话入口（SSE 流式），function calling 挂 4 个只读工具 `search_leads / search_opportunities / get_account_360 / recommend_scripts`，能回答"我手上哪个商机风险最大？"。权限继承当前用户；`routing` 追加 chat 档位、`llm_calls.task_type` 追加 chat。
+- **M9 合同处理**：docx 模板变量填充生成；上传合同 → LLM 抽取要素（甲乙方/金额/期限/付款节点）→ 风险条款清单比对审查。输出永远是"提示"不是"结论"，UI 注明不构成法律意见。
+- **M10 销售预测**：加权 pipeline（Σ 金额 × 阶段概率）+ 按 `forecast_snapshots` 周度快照做趋势外推。数据 < 2 个完整季度时只展示加权 pipeline，不做时序预测——没有数据的预测是玄学，UI 必须展示置信区间和数据量提示。
+- **M11 业绩分析**：团队/个人维度（成交额、转化率、周期、活动量），LLM 读聚合数据生成月度归因解读（"转化率下降主因是 proposal→negotiation 停滞"）。
+
+## 8. 里程碑与执行顺序
+
+> 每个 M 独立可验收、可运行。Claude Code 按顺序执行，**完成一个 M 的 DoD 才进入下一个**。
+
+| M | 内容 | 交付物 | DoD（验收） |
+|---|---|---|---|
+| M0 | 脚手架 | monorepo（backend/ + frontend/）、docker-compose（pg16+pgvector、redis）、FastAPI 骨架 + /health、Next.js 骨架 + 登录页、JWT auth、`.env.example`（全部环境变量）、Makefile、CI（跑 make lint + make test） | `make dev` 一键起全栈；登录跑通；CI 绿 |
+| M1 | 数据底座 | §4 全部 P0 表 + Alembic 迁移、通用 CRUD service 基类、RBAC 中间件、用户/团队管理 API（admin）、种子数据脚本（3 用户 ×2 团队 + 50 假线索/客户/商机） | 迁移可升可降；RBAC 三角色单测覆盖；seed 后前端能看到数据 |
+| M2 | LLM 抽象层 | §5 全部：client/router/providers.yaml、llm_calls 记账、evals/ 骨架（pytest 驱动 golden set）、`POST /api/v1/ai/ping` 冒烟接口 | 切换 provider 只改配置；断网/超时降级单测通过；每次调用落审计表 |
+| M3 | 线索管理 | §6.1 前后端 + 评分异步任务 + Excel 导入 | §6.1 验收清单全过 + 评分 eval ≥20 条 |
+| M4 | 客户 360 | §6.2 前后端 + 画像生成 | §6.2 验收清单全过 + 画像 eval（含"信息不足不编造"用例） |
+| M5 | 商机跟进 | §6.3 看板 + 跟进 + AI 建议 + 定时风险提醒 | §6.3 验收清单全过 |
+| M6 | 话术推荐 | §6.4 话术库 + RAG + 生成 + 知识库上传 | §6.4 验收清单全过 + 检索质量抽查（top-5 命中人工评 ≥80%） |
+| M7 | 打磨收尾 | 仪表盘、admin 用户管理页、E2E（Playwright 冒烟 5 条主流程）、部署文档 README + 生产初始化 admin 脚本 | 全量测试绿；docker compose prod 模式可部署；演示脚本可走通 |
+| M8–M11 | P1 | AI 助手 / 合同 / 预测 / 业绩 | P0 上线且积累数据后启动 |
+
+## 9. 目录结构
+
+```
+ai-sales-assistant/
+├── CLAUDE.md                  # 项目约定（Claude Code 必读）
+├── PLAN.md                    # 本文档
+├── docker-compose.yml         # pg + redis + backend + frontend
+├── Makefile                   # dev / test / lint / seed / migrate
+├── backend/
+│   ├── pyproject.toml         # uv 管理依赖
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── core/              # config(pydantic-settings) / security / deps
+│   │   ├── models/            # SQLAlchemy（一实体一文件）
+│   │   ├── schemas/           # Pydantic（api 出入参）
+│   │   ├── api/v1/            # 路由（薄，只做参数校验+调 service）
+│   │   ├── services/          # 业务逻辑 + RBAC 检查
+│   │   ├── ai/                # §5 抽象层 + prompts/ + rag.py + schemas.py
+│   │   └── tasks/             # ARQ：scoring / profile / embedding / risk_scan
+│   ├── alembic/
+│   ├── tests/                 # pytest（单测 + API 测试，testcontainers 起 pg）
+│   ├── evals/                 # golden sets + 评测脚本（pytest -m eval）
+│   └── scripts/seed.py
+└── frontend/
+    ├── app/                   # (auth)/login、(main)/dashboard|leads|accounts|opportunities|scripts|admin
+    ├── components/            # ui/(shadcn) + 业务组件
+    ├── lib/                   # api client(openapi-typescript 生成) / hooks / stores
+    └── e2e/                   # Playwright
+```
+
+## 10. 风险与实话（别跳过这节）
+
+1. **AI 评分冷启动**：上线初期没有成交数据校准，评分只是"专家规则 + 语义判断"。UI 诚实标注"参考分"，别把它包装成魔法，销售被误导一次就再也不信了。
+2. **话术库质量 = 项目生死线**：模型再强，库里没货就是无米之炊。上线 checklist 第一条：业务方灌 ≥50 条 top sales 真实话术。
+3. **销售预测的诚实边界**：数据不足 2 个季度只做加权 pipeline。敢在没数据时给"AI 预测销售额"，等于给管理层递了一份占卜报告。
+4. **成本失控**：全部调用走 router 分档（评分/抽取用 flash 档，生成用 strong 档）+ llm_calls 记账 + 日限额。粗算：1 个销售 1 天 ≈ 20 次评分(fast) + 10 次生成(strong) ≈ ¥0.5–2，可控，但必须有账可查。
+5. **幻觉**：所有 AI 输出结构化 + 附来源/理由；画像和建议的 prompt 明确"信息不足就说不足"；evals 里放反幻觉用例。
+6. **范围蔓延**：任何人（包括未来的你）想在 P0 加语音转写/自动外呼/移动端，一律先问：核心闭环跑通了吗？
+
+## 11. 给 Claude Code 的启动指令
+
+**首次启动（M0）**，在空目录下执行 `claude`，输入：
+
+```
+请先完整阅读 PLAN.md 和 CLAUDE.md。
+执行 M0（脚手架）：按 PLAN.md §8 M0 的交付物清单实现，
+完成后运行 make lint && make test，全绿后给我一份 M0 验收报告
+（对照 DoD 逐条勾选），不要提前开始 M1。
+```
+
+**后续每个里程碑**（把 N 换成数字）：
+
+```
+阅读 PLAN.md §6/§8 中 M{N} 的规格与 DoD。
+先列出你的实现清单让我确认，确认后再动手。
+完成后：make lint && make test 全绿 + DoD 逐条自查报告。
+遇到 PLAN 未覆盖的决策点，停下来问我，不要自作主张改架构。
+```
+
+**踩坑守则**（也写进了 CLAUDE.md）：一次只做一个 M；每个 M 结束提交 git；prompt 文件改动必须跑 `make eval`；不新增 PLAN 之外的依赖前先说明理由。
+
+---
+*本计划由 Claude 基于 2026-07 技术现状制定。DeepSeek V4 / Qwen3.7 定价与模型名以接入时官方文档为准。*

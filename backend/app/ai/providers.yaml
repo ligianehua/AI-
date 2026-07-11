@@ -1,0 +1,41 @@
+# LLM 模型注册表 —— 密钥不在此文件，只引用环境变量名（值在 .env）
+# 切换供应商/模型只改本文件，代码零改动。
+# 注意：模型名以接入时官方文档为准（PLAN.md 尾注），填好 API key 后先跑 POST /api/v1/ai/ping 冒烟。
+
+providers:
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    api_key_env: DEEPSEEK_API_KEY
+    models:
+      fast: deepseek-v4-flash
+      strong: deepseek-v4-pro
+  qwen:
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key_env: DASHSCOPE_API_KEY
+    models:
+      fast: qwen-flash
+      strong: qwen3.7-max
+      embedding: text-embedding-v4
+  # anthropic / openrouter 同构追加即可；Anthropic 原生协议 adapter P0 预留未实现
+
+# 任务 → 档位路由（省钱的关键：分类/抽取用 fast，生成用 strong）
+# 某供应商缺档位时自动落到下一个有该档位的供应商（如 embedding 只有 qwen 提供）
+routing:
+  ping:            { tier: fast,   temperature: 0.0 }
+  lead_scoring:    { tier: fast,   temperature: 0.1, json: true }
+  account_profile: { tier: strong, temperature: 0.3, json: true }
+  next_action:     { tier: fast,   temperature: 0.3, json: true }
+  script_gen:      { tier: strong, temperature: 0.7, stream: true }
+  embedding:       { tier: embedding }
+  # P1 开通用助手时追加 chat 路由
+
+default_provider: deepseek
+fallback_provider: qwen   # 主供应商 5xx/超时/连接失败 → 自动降级重试一次
+
+# 元 / 1M tokens —— 示例价，接入时以官方价目表为准（记账 cost_estimate 用）
+pricing:
+  deepseek-v4-flash: { input: 1.0, output: 4.0 }
+  deepseek-v4-pro:   { input: 4.0, output: 16.0 }
+  qwen-flash:        { input: 0.8, output: 3.2 }
+  qwen3.7-max:       { input: 6.0, output: 24.0 }
+  text-embedding-v4: { input: 0.5, output: 0.0 }

@@ -84,6 +84,7 @@ class KnowledgeDocStatus(StrEnum):
 
 
 class LlmTaskType(StrEnum):
+    PING = "ping"  # 冒烟
     LEAD_SCORING = "lead_scoring"
     ACCOUNT_PROFILE = "account_profile"
     NEXT_ACTION = "next_action"

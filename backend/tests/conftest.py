@@ -6,9 +6,11 @@ import tempfile
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from openai import AsyncOpenAI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -18,11 +20,13 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 
+from app.ai.client import LLMClient
 from app.core.db import get_session
 from app.core.security import hash_password
 from app.main import app
 from app.models import Team, User
 from app.models.enums import Role
+from tests.fake_llm import FakeOpenAI
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TEST_PASSWORD = "password123"
@@ -157,6 +161,21 @@ async def roles(session: AsyncSession) -> RoleUsers:
     session.add_all([users.admin, users.manager_a, users.sales_a, users.sales_a2, users.sales_b])
     await session.commit()
     return users
+
+
+@pytest.fixture
+def fakes() -> dict[str, "FakeOpenAI"]:
+    return {"deepseek": FakeOpenAI(), "qwen": FakeOpenAI()}
+
+
+@pytest.fixture
+def llm(engine: AsyncEngine, fakes: dict[str, "FakeOpenAI"]) -> "LLMClient":
+    """绑定测试库记账 + fake 供应商的 LLMClient。"""
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+    return LLMClient(
+        sessionmaker=maker,
+        client_factory=lambda name, provider: cast(AsyncOpenAI, fakes[name]),
+    )
 
 
 @pytest.fixture

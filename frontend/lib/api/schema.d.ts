@@ -146,6 +146,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai/ping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AI 冒烟：验证供应商连通与记账 */
+        post: operations["ping_api_v1_ai_ping_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -200,6 +217,25 @@ export interface components {
             page: number;
             /** Page Size */
             page_size: number;
+        };
+        /** PingRequest */
+        PingRequest: {
+            /**
+             * Message
+             * @default 你好，请回复 pong
+             */
+            message: string;
+        };
+        /** PingResponse */
+        PingResponse: {
+            /** Reply */
+            reply: string;
+            /** Provider */
+            provider: string;
+            /** Model */
+            model: string;
+            /** Latency Ms */
+            latency_ms: number;
         };
         /**
          * Role
@@ -726,6 +762,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardSummary"];
+                };
+            };
+        };
+    };
+    ping_api_v1_ai_ping_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

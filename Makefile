@@ -13,7 +13,7 @@ lint:
 	cd frontend && npm run lint && npm run typecheck
 
 eval:
-	cd backend && uv run pytest -m eval
+	cd backend && uv run pytest evals -m eval
 
 migrate:
 	cd backend && uv run alembic upgrade head

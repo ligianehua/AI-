@@ -36,3 +36,18 @@ class NotFoundError(DomainError):
 class ConflictError(DomainError):
     code = "conflict"
     http_status = 409
+
+
+class LLMUnavailableError(DomainError):
+    code = "llm_unavailable"
+    http_status = 503
+
+
+class LLMOutputError(DomainError):
+    code = "llm_output_invalid"
+    http_status = 502
+
+
+class LLMQuotaExceededError(DomainError):
+    code = "llm_quota_exceeded"
+    http_status = 429

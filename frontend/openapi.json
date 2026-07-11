@@ -618,6 +618,52 @@
           }
         ]
       }
+    },
+    "/api/v1/ai/ping": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "AI 冒烟：验证供应商连通与记账",
+        "operationId": "ping_api_v1_ai_ping_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -744,6 +790,46 @@
           "page_size"
         ],
         "title": "PageResult[UserOut]"
+      },
+      "PingRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Message",
+            "default": "你好，请回复 pong"
+          }
+        },
+        "type": "object",
+        "title": "PingRequest"
+      },
+      "PingResponse": {
+        "properties": {
+          "reply": {
+            "type": "string",
+            "title": "Reply"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply",
+          "provider",
+          "model",
+          "latency_ms"
+        ],
+        "title": "PingResponse"
       },
       "Role": {
         "type": "string",

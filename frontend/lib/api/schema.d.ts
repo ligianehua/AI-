@@ -301,10 +301,236 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 客户列表（q 按名称模糊搜索） */
+        get: operations["list_accounts_api_v1_accounts_get"];
+        put?: never;
+        /** 创建客户 */
+        post: operations["create_account_api_v1_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 客户 360 详情（含联系人） */
+        get: operations["get_account_api_v1_accounts__account_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 更新客户 */
+        patch: operations["update_account_api_v1_accounts__account_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 跟进时间线（聚合线索/客户/商机） */
+        get: operations["get_timeline_api_v1_accounts__account_id__timeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 生成/刷新 AI 画像（异步） */
+        post: operations["refresh_profile_api_v1_accounts__account_id__profile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 创建联系人 */
+        post: operations["create_contact_api_v1_contacts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contacts/{contact_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除联系人（软删） */
+        delete: operations["delete_contact_api_v1_contacts__contact_id__delete"];
+        options?: never;
+        head?: never;
+        /** 更新联系人 */
+        patch: operations["update_contact_api_v1_contacts__contact_id__patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountCreate */
+        AccountCreate: {
+            /** Name */
+            name: string;
+            /** Industry */
+            industry?: string | null;
+            /** Size */
+            size?: string | null;
+            /** Region */
+            region?: string | null;
+            /** Website */
+            website?: string | null;
+            /** Remark */
+            remark?: string | null;
+        };
+        /** AccountDetail */
+        AccountDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Industry */
+            industry: string | null;
+            /** Size */
+            size: string | null;
+            /** Region */
+            region: string | null;
+            /** Website */
+            website: string | null;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Ai Profile */
+            ai_profile: {
+                [key: string]: unknown;
+            } | null;
+            /** Ai Profile Updated At */
+            ai_profile_updated_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Contacts
+             * @default []
+             */
+            contacts: components["schemas"]["ContactOut"][];
+        };
+        /** AccountOut */
+        AccountOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Industry */
+            industry: string | null;
+            /** Size */
+            size: string | null;
+            /** Region */
+            region: string | null;
+            /** Website */
+            website: string | null;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Ai Profile */
+            ai_profile: {
+                [key: string]: unknown;
+            } | null;
+            /** Ai Profile Updated At */
+            ai_profile_updated_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AccountUpdate */
+        AccountUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Industry */
+            industry?: string | null;
+            /** Size */
+            size?: string | null;
+            /** Region */
+            region?: string | null;
+            /** Website */
+            website?: string | null;
+            /** Remark */
+            remark?: string | null;
+        };
         /** ActivityOut */
         ActivityOut: {
             /**
@@ -331,6 +557,11 @@ export interface components {
             created_at: string;
         };
         /**
+         * ActivityRelatedType
+         * @enum {string}
+         */
+        ActivityRelatedType: "lead" | "account" | "opportunity";
+        /**
          * ActivityType
          * @enum {string}
          */
@@ -354,6 +585,79 @@ export interface components {
         Body_import_leads_api_v1_leads_import_post: {
             /** File */
             file: string;
+        };
+        /** ContactCreate */
+        ContactCreate: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Name */
+            name: string;
+            /** Title */
+            title?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Wechat */
+            wechat?: string | null;
+            /** Email */
+            email?: string | null;
+            role_in_deal?: components["schemas"]["ContactRoleInDeal"] | null;
+            /** Remark */
+            remark?: string | null;
+        };
+        /** ContactOut */
+        ContactOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Name */
+            name: string;
+            /** Title */
+            title: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Wechat */
+            wechat: string | null;
+            /** Email */
+            email: string | null;
+            role_in_deal: components["schemas"]["ContactRoleInDeal"] | null;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ContactRoleInDeal
+         * @enum {string}
+         */
+        ContactRoleInDeal: "decision_maker" | "influencer" | "user" | "gatekeeper";
+        /** ContactUpdate */
+        ContactUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Wechat */
+            wechat?: string | null;
+            /** Email */
+            email?: string | null;
+            role_in_deal?: components["schemas"]["ContactRoleInDeal"] | null;
+            /** Remark */
+            remark?: string | null;
         };
         /** ConvertRequest */
         ConvertRequest: {
@@ -594,6 +898,17 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** PageResult[AccountOut] */
+        PageResult_AccountOut_: {
+            /** Items */
+            items: components["schemas"]["AccountOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /** PageResult[LeadOut] */
         PageResult_LeadOut_: {
             /** Items */
@@ -675,6 +990,34 @@ export interface components {
         TeamUpdate: {
             /** Name */
             name: string;
+        };
+        /**
+         * TimelineItem
+         * @description 跨 lead/account/opportunity 聚合的跟进记录。
+         */
+        TimelineItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            related_type: components["schemas"]["ActivityRelatedType"];
+            /** Related Label */
+            related_label: string;
+            type: components["schemas"]["ActivityType"];
+            /** Content */
+            content: string;
+            /** Next Action */
+            next_action: string | null;
+            /** Next Action Date */
+            next_action_date: string | null;
+            /** Owner Name */
+            owner_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -1504,6 +1847,300 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConvertResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_accounts_api_v1_accounts_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                sort?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_AccountOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_account_api_v1_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_account_api_v1_accounts__account_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_account_api_v1_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_timeline_api_v1_accounts__account_id__timeline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_profile_api_v1_accounts__account_id__profile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_contact_api_v1_contacts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_contact_api_v1_contacts__contact_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_contact_api_v1_contacts__contact_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactOut"];
                 };
             };
             /** @description Validation Error */

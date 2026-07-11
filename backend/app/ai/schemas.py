@@ -18,3 +18,21 @@ class LeadScoringOutput(BaseModel):
     budget_signal: bool = Field(description="是否有明确预算信号")
     urgency: Literal["low", "medium", "high"] = Field(description="紧迫度")
     reasons: list[str] = Field(min_length=1, max_length=5, description="中文评分理由")
+
+
+class DecisionChainItem(BaseModel):
+    contact: str = Field(description="联系人姓名（必须来自已知联系人列表）")
+    role: str = Field(description="在采购决策中的角色")
+    attitude: str = Field(description="对合作的态度判断")
+
+
+class AccountProfileOutput(BaseModel):
+    """客户 AI 画像（PLAN §6.2 结构）。信息不足必须明说，禁止编造。"""
+
+    company_overview: str = Field(min_length=1, description="公司概况")
+    pain_points: list[str] = Field(description="痛点，无依据则为空列表")
+    decision_chain: list[DecisionChainItem] = Field(description="决策链，只含已知联系人")
+    cooperation_stage_analysis: str = Field(min_length=1, description="合作阶段分析")
+    risks: list[str] = Field(description="风险")
+    suggestions: list[str] = Field(min_length=1, description="行动建议")
+    confidence_note: str = Field(min_length=1, description="置信说明，须注明依据的跟进记录条数")

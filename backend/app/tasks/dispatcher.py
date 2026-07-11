@@ -27,9 +27,13 @@ async def _get_pool() -> ArqRedis:
 
 
 def _task_registry() -> dict[str, Any]:
+    from app.tasks.profile import account_profile_task
     from app.tasks.scoring import score_lead_task
 
-    return {"score_lead_task": score_lead_task}
+    return {
+        "score_lead_task": score_lead_task,
+        "account_profile_task": account_profile_task,
+    }
 
 
 async def _run_local(task_name: str, args: tuple[Any, ...]) -> None:

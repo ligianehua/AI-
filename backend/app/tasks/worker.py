@@ -8,6 +8,7 @@ from typing import Any
 from arq.connections import RedisSettings
 
 from app.core.config import get_settings
+from app.tasks.profile import account_profile_task
 from app.tasks.scoring import score_lead_task
 
 
@@ -24,7 +25,7 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    functions = [score_lead_task]
+    functions = [score_lead_task, account_profile_task]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

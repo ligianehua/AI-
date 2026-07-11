@@ -31,10 +31,18 @@ export function useLeads(filters: LeadFilters) {
       if (error || !data) throw new Error("加载线索失败");
       return data;
     },
-    // 有"评分中"的线索时轮询刷新（评分异步完成后列表自动更新）
+    // 有"评分中"的线索时轮询刷新（评分异步完成后列表自动更新）。
+    // 只对 10 分钟内创建的未评分线索轮询，避免历史未评分数据导致无限轮询。
     refetchInterval: (query) => {
       const items = query.state.data?.items;
-      return items?.some((l) => l.score === null && l.status !== "invalid") ? 4000 : false;
+      const now = Date.now();
+      const scoring = items?.some(
+        (l) =>
+          l.score === null &&
+          l.status !== "invalid" &&
+          now - new Date(l.created_at).getTime() < 10 * 60 * 1000,
+      );
+      return scoring ? 4000 : false;
     },
   });
 }

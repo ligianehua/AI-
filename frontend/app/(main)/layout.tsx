@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "工作台" },
   { href: "/leads", label: "线索" },
+  { href: "/accounts", label: "客户" },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {

@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # 成本护栏：每用户每日 LLM token 限额（输入+输出），0 = 不限
     llm_daily_token_limit_per_user: int = 500_000
 
+    # 任务模式：arq（Redis 队列，生产）| local（进程内后台执行，无 Redis 的开发环境）
+    task_mode: str = "arq"
+
     # M0 临时引导账号（M1 落库后由 users 表取代）
     admin_email: str = "admin@example.com"
     admin_password: str = "admin123"

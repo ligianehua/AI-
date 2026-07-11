@@ -1,0 +1,21 @@
+# 线索评分规则层权重（总分上限 max_rule_score，改这里即调权，不改代码）
+completeness:            # 信息完整度
+  contact_phone: 8
+  contact_wechat: 4
+  contact_name: 4
+  requirement_desc: 12   # 需求描述长度 >= requirement_min_length 才计分
+requirement_min_length: 10
+
+source_weights:          # 来源权重：转介绍 > 展会 > 官网 > 广告 > 陌拜
+  referral: 12
+  exhibition: 8
+  website: 5
+  ads: 4
+  cold_call: 2
+  other: 2
+
+industry_match:          # 目标行业匹配加分
+  weight: 4
+  industries: ["制造业", "互联网", "金融", "医疗", "教育", "零售", "物流", "能源"]
+
+max_rule_score: 40

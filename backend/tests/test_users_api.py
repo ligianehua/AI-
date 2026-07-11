@@ -91,6 +91,21 @@ async def test_admin_deactivate_user_blocks_login(
     assert resp.status_code == 401
 
 
+async def test_assignable_users_scoped(
+    client: AsyncClient, roles: RoleUsers, login: LoginFn
+) -> None:
+    resp = await client.get("/api/v1/users/assignable", headers=await login("manager_a@test.cn"))
+    assert resp.status_code == 200
+    names = {u["name"] for u in resp.json()}
+    assert names == {"A组主管", "A组销售一", "A组销售二"}  # 只有本团队
+
+    resp = await client.get("/api/v1/users/assignable", headers=await login("admin@test.cn"))
+    assert len(resp.json()) == 5
+
+    resp = await client.get("/api/v1/users/assignable", headers=await login("sales_a@test.cn"))
+    assert resp.status_code == 403
+
+
 async def test_admin_cannot_delete_self(
     client: AsyncClient, roles: RoleUsers, login: LoginFn
 ) -> None:

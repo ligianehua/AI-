@@ -39,6 +39,12 @@ async def create_user(
     return UserOut.model_validate(user)
 
 
+@router.get("/assignable", summary="可分配的负责人列表（manager=本团队 / admin=全部）")
+async def list_assignable(session: SessionDep, current_user: CurrentUserDep) -> list[UserOut]:
+    users = await user_service.list_assignable_users(session, current_user)
+    return [UserOut.model_validate(u) for u in users]
+
+
 @router.get("/{user_id}", summary="用户详情（admin）")
 async def get_user(
     user_id: uuid.UUID, session: SessionDep, current_user: CurrentUserDep

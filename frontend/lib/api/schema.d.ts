@@ -73,6 +73,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/assignable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 可分配的负责人列表（manager=本团队 / admin=全部） */
+        get: operations["list_assignable_api_v1_users_assignable_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/{user_id}": {
         parameters: {
             query?: never;
@@ -163,10 +180,205 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 线索列表（默认按分数倒序） */
+        get: operations["list_leads_api_v1_leads_get"];
+        put?: never;
+        /** 创建线索（自动触发 AI 评分，附撞单提示） */
+        post: operations["create_lead_api_v1_leads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/import-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载 Excel 导入模板 */
+        get: operations["download_import_template_api_v1_leads_import_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Excel 批量导入（行号级错误报告 + 撞单提示） */
+        post: operations["import_leads_api_v1_leads_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 批量分配（manager/admin） */
+        post: operations["assign_leads_api_v1_leads_assign_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/{lead_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 线索详情（含评分理由与跟进记录） */
+        get: operations["get_lead_api_v1_leads__lead_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 更新线索/改状态 */
+        patch: operations["update_lead_api_v1_leads__lead_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/leads/{lead_id}/score": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 触发/重算 AI 评分（异步） */
+        post: operations["rescore_lead_api_v1_leads__lead_id__score_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/{lead_id}/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 转化为客户+联系人+商机（事务） */
+        post: operations["convert_lead_api_v1_leads__lead_id__convert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivityOut */
+        ActivityOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            type: components["schemas"]["ActivityType"];
+            /** Content */
+            content: string;
+            /** Next Action */
+            next_action: string | null;
+            /** Next Action Date */
+            next_action_date: string | null;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ActivityType
+         * @enum {string}
+         */
+        ActivityType: "call" | "visit" | "wechat" | "email" | "meeting" | "other";
+        /** AssignRequest */
+        AssignRequest: {
+            /** Lead Ids */
+            lead_ids: string[];
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+        };
+        /** AssignResult */
+        AssignResult: {
+            /** Assigned */
+            assigned: number;
+        };
+        /** Body_import_leads_api_v1_leads_import_post */
+        Body_import_leads_api_v1_leads_import_post: {
+            /** File */
+            file: string;
+        };
+        /** ConvertRequest */
+        ConvertRequest: {
+            /** Account Name */
+            account_name?: string | null;
+            /** Opportunity Name */
+            opportunity_name?: string | null;
+            /** Amount */
+            amount?: number | string | null;
+        };
+        /** ConvertResult */
+        ConvertResult: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Contact Id */
+            contact_id: string | null;
+            /**
+             * Opportunity Id
+             * Format: uuid
+             */
+            opportunity_id: string;
+        };
         /**
          * DashboardSummary
          * @description 工作台摘要（按当前用户可见域统计）。金额单位 CNY。
@@ -181,10 +393,196 @@ export interface components {
             /** Pipeline Amount */
             pipeline_amount: number;
         };
+        /** DuplicateWarning */
+        DuplicateWarning: {
+            /**
+             * Lead Id
+             * Format: uuid
+             */
+            lead_id: string;
+            /** Account Name */
+            account_name: string;
+            /** Owner Name */
+            owner_name: string;
+            /** Matched Field */
+            matched_field: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ImportRowError */
+        ImportRowError: {
+            /** Row */
+            row: number;
+            /** Reason */
+            reason: string;
+        };
+        /** LeadCreate */
+        LeadCreate: {
+            source: components["schemas"]["LeadSource"];
+            /** Account Name */
+            account_name: string;
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /** Contact Wechat */
+            contact_wechat?: string | null;
+            /** Industry */
+            industry?: string | null;
+            /** Requirement Desc */
+            requirement_desc?: string | null;
+        };
+        /** LeadCreateResult */
+        LeadCreateResult: {
+            lead: components["schemas"]["LeadOut"];
+            /** Duplicate Warnings */
+            duplicate_warnings: components["schemas"]["DuplicateWarning"][];
+        };
+        /** LeadDetail */
+        LeadDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            source: components["schemas"]["LeadSource"];
+            /** Account Name */
+            account_name: string;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /** Contact Wechat */
+            contact_wechat: string | null;
+            /** Industry */
+            industry: string | null;
+            /** Requirement Desc */
+            requirement_desc: string | null;
+            status: components["schemas"]["LeadStatus"];
+            /** Score */
+            score: number | null;
+            /** Score Detail */
+            score_detail: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Converted Account Id */
+            converted_account_id: string | null;
+            /** Converted Opportunity Id */
+            converted_opportunity_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Activities
+             * @default []
+             */
+            activities: components["schemas"]["ActivityOut"][];
+        };
+        /** LeadImportReport */
+        LeadImportReport: {
+            /** Total Rows */
+            total_rows: number;
+            /** Imported */
+            imported: number;
+            /** Failed */
+            failed: number;
+            /** Errors */
+            errors: components["schemas"]["ImportRowError"][];
+            /** Duplicate Warnings */
+            duplicate_warnings: components["schemas"]["ImportRowError"][];
+        };
+        /** LeadOut */
+        LeadOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            source: components["schemas"]["LeadSource"];
+            /** Account Name */
+            account_name: string;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /** Contact Wechat */
+            contact_wechat: string | null;
+            /** Industry */
+            industry: string | null;
+            /** Requirement Desc */
+            requirement_desc: string | null;
+            status: components["schemas"]["LeadStatus"];
+            /** Score */
+            score: number | null;
+            /** Score Detail */
+            score_detail: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Converted Account Id */
+            converted_account_id: string | null;
+            /** Converted Opportunity Id */
+            converted_opportunity_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * LeadSource
+         * @enum {string}
+         */
+        LeadSource: "website" | "exhibition" | "referral" | "ads" | "cold_call" | "other";
+        /**
+         * LeadStatus
+         * @enum {string}
+         */
+        LeadStatus: "new" | "contacted" | "qualified" | "converted" | "invalid";
+        /** LeadUpdate */
+        LeadUpdate: {
+            source?: components["schemas"]["LeadSource"] | null;
+            /** Account Name */
+            account_name?: string | null;
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /** Contact Wechat */
+            contact_wechat?: string | null;
+            /** Industry */
+            industry?: string | null;
+            /** Requirement Desc */
+            requirement_desc?: string | null;
+            status?: components["schemas"]["LeadStatus"] | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -195,6 +593,17 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** PageResult[LeadOut] */
+        PageResult_LeadOut_: {
+            /** Items */
+            items: components["schemas"]["LeadOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
         };
         /** PageResult[TeamOut] */
         PageResult_TeamOut_: {
@@ -487,6 +896,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_assignable_api_v1_users_assignable_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"][];
                 };
             };
         };
@@ -786,6 +1215,295 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_leads_api_v1_leads_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["LeadStatus"] | null;
+                score_gte?: number | null;
+                owner_id?: string | null;
+                sort?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_LeadOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_lead_api_v1_leads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadCreateResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_import_template_api_v1_leads_import_template_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    import_leads_api_v1_leads_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_leads_api_v1_leads_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadImportReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_leads_api_v1_leads_assign_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lead_api_v1_leads__lead_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_lead_api_v1_leads__lead_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescore_lead_api_v1_leads__lead_id__score_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    convert_lead_api_v1_leads__lead_id__convert_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConvertRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConvertResult"];
                 };
             };
             /** @description Validation Error */

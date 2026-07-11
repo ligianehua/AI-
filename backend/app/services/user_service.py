@@ -32,6 +32,16 @@ async def _ensure_team_exists(session: AsyncSession, team_id: uuid.UUID | None) 
         raise DomainError("团队不存在")
 
 
+async def list_assignable_users(session: AsyncSession, actor: User) -> list[User]:
+    """可分配对象：manager=本团队成员，admin=全部在职用户；sales 禁止。"""
+    if actor.role == Role.SALES:
+        raise PermissionDeniedError("销售不能分配线索")
+    stmt = select(User).where(User.deleted_at.is_(None), User.is_active)
+    if actor.role == Role.MANAGER:
+        stmt = stmt.where(User.team_id == actor.team_id)
+    return list(await session.scalars(stmt.order_by(User.name.asc())))
+
+
 async def list_users(
     session: AsyncSession, actor: User, page: int = 1, page_size: int = 20
 ) -> tuple[list[User], int]:

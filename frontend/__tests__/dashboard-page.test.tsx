@@ -38,7 +38,14 @@ vi.mock("@/lib/api/client", () => ({
   },
 }));
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import DashboardPage from "@/app/(main)/dashboard/page";
+
+function renderWithQuery(ui: React.ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 describe("工作台", () => {
   beforeEach(() => {
@@ -46,13 +53,13 @@ describe("工作台", () => {
   });
 
   it("展示当前用户与按可见域统计的摘要卡片", async () => {
-    render(<DashboardPage />);
+    renderWithQuery(<DashboardPage />);
     expect(await screen.findByText("工作台")).toBeDefined();
-    expect(screen.getByText(/李小销/)).toBeDefined();
-    expect(screen.getByText("17")).toBeDefined(); // 线索数
-    expect(screen.getByText("8")).toBeDefined(); // 客户数
-    expect(screen.getByText("5")).toBeDefined(); // 商机数
-    expect(screen.getByText(/123.*万/)).toBeDefined(); // 在途金额 ¥123 万
+    expect(await screen.findByText(/李小销/)).toBeDefined();
+    expect(await screen.findByText("17")).toBeDefined(); // 线索数
+    expect(await screen.findByText("8")).toBeDefined(); // 客户数
+    expect(await screen.findByText("5")).toBeDefined(); // 商机数
+    expect(await screen.findByText(/123.*万/)).toBeDefined(); // 在途金额 ¥123 万
     expect(screen.getAllByTestId("stat-card")).toHaveLength(4);
   });
 });

@@ -47,6 +47,7 @@ export default function AccountDetailPage() {
       }
       return 3000;
     },
+    refetchIntervalInBackground: true,
   });
 
   const { data: timeline } = useQuery({

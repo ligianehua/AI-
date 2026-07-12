@@ -163,6 +163,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AI 生成结果反馈（1 赞 / -1 踩） */
+        post: operations["set_feedback_api_v1_ai_feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ai/ping": {
         parameters: {
             query?: never;
@@ -596,6 +613,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scripts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 话术列表（全员可读） */
+        get: operations["list_scripts_api_v1_scripts_get"];
+        put?: never;
+        /** 新增话术（admin/manager，自动异步嵌入） */
+        post: operations["create_script_api_v1_scripts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scripts/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 混合检索（向量+关键词，无嵌入时降级关键词） */
+        post: operations["search_scripts_api_v1_scripts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scripts/recommend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 话术推荐（SSE 流式：sources → delta* → done） */
+        post: operations["recommend_api_v1_scripts_recommend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scripts/{script_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除话术（admin/manager，软删） */
+        delete: operations["delete_script_api_v1_scripts__script_id__delete"];
+        options?: never;
+        head?: never;
+        /** 更新话术（admin/manager；改内容重嵌入） */
+        patch: operations["update_script_api_v1_scripts__script_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/knowledge/docs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 知识文档列表 */
+        get: operations["list_docs_api_v1_knowledge_docs_get"];
+        put?: never;
+        /** 上传知识文档（txt/md/docx，异步分块+嵌入） */
+        post: operations["upload_doc_api_v1_knowledge_docs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/docs/{doc_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除知识文档（admin/manager，软删） */
+        delete: operations["delete_doc_api_v1_knowledge_docs__doc_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -810,6 +932,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_doc_api_v1_knowledge_docs_post */
+        Body_upload_doc_api_v1_knowledge_docs_post: {
+            /** File */
+            file: string;
+        };
         /** ContactCreate */
         ContactCreate: {
             /**
@@ -935,6 +1062,16 @@ export interface components {
             /** Matched Field */
             matched_field: string;
         };
+        /** FeedbackRequest */
+        FeedbackRequest: {
+            /**
+             * Llm Call Id
+             * Format: uuid
+             */
+            llm_call_id: string;
+            /** Feedback */
+            feedback: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -962,6 +1099,32 @@ export interface components {
             /** Columns */
             columns: components["schemas"]["KanbanColumn"][];
         };
+        /** KnowledgeDocOut */
+        KnowledgeDocOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["KnowledgeDocStatus"];
+            /**
+             * Chunk Count
+             * @default 0
+             */
+            chunk_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * KnowledgeDocStatus
+         * @enum {string}
+         */
+        KnowledgeDocStatus: "processing" | "ready" | "failed";
         /** LeadCreate */
         LeadCreate: {
             source: components["schemas"]["LeadSource"];
@@ -1271,6 +1434,17 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
+        /** PageResult[KnowledgeDocOut] */
+        PageResult_KnowledgeDocOut_: {
+            /** Items */
+            items: components["schemas"]["KnowledgeDocOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /** PageResult[LeadOut] */
         PageResult_LeadOut_: {
             /** Items */
@@ -1286,6 +1460,17 @@ export interface components {
         PageResult_NotificationOut_: {
             /** Items */
             items: components["schemas"]["NotificationOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** PageResult[ScriptOut] */
+        PageResult_ScriptOut_: {
+            /** Items */
+            items: components["schemas"]["ScriptOut"][];
             /** Total */
             total: number;
             /** Page */
@@ -1334,11 +1519,96 @@ export interface components {
             /** Latency Ms */
             latency_ms: number;
         };
+        /** RecommendRequest */
+        RecommendRequest: {
+            scenario: components["schemas"]["ScriptCategory"];
+            /** Channel */
+            channel: string;
+            /** Opportunity Id */
+            opportunity_id?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** User Hint */
+            user_hint?: string | null;
+        };
         /**
          * Role
          * @enum {string}
          */
         Role: "sales" | "manager" | "admin";
+        /**
+         * ScriptCategory
+         * @enum {string}
+         */
+        ScriptCategory: "opening" | "discovery" | "objection" | "pricing" | "closing" | "retention";
+        /** ScriptCreate */
+        ScriptCreate: {
+            category: components["schemas"]["ScriptCategory"];
+            /** Scenario */
+            scenario: string;
+            /** Content */
+            content: string;
+            /** Tags */
+            tags?: string[];
+        };
+        /** ScriptOut */
+        ScriptOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            category: components["schemas"]["ScriptCategory"];
+            /** Scenario */
+            scenario: string;
+            /** Content */
+            content: string;
+            /** Tags */
+            tags: string[];
+            /** Usage Count */
+            usage_count: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Has Embedding
+             * @default false
+             */
+            has_embedding: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ScriptSearchHit */
+        ScriptSearchHit: {
+            script: components["schemas"]["ScriptOut"];
+            /** Score */
+            score: number;
+        };
+        /** ScriptSearchRequest */
+        ScriptSearchRequest: {
+            /** Query */
+            query: string;
+            category?: components["schemas"]["ScriptCategory"] | null;
+            /**
+             * Top K
+             * @default 5
+             */
+            top_k: number;
+        };
+        /** ScriptUpdate */
+        ScriptUpdate: {
+            category?: components["schemas"]["ScriptCategory"] | null;
+            /** Scenario */
+            scenario?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /** StageChangeRequest */
         StageChangeRequest: {
             stage: components["schemas"]["OpportunityStage"];
@@ -1920,6 +2190,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardSummary"];
+                };
+            };
+        };
+    };
+    set_feedback_api_v1_ai_feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2951,6 +3252,297 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_scripts_api_v1_scripts_get: {
+        parameters: {
+            query?: {
+                category?: components["schemas"]["ScriptCategory"] | null;
+                include_inactive?: boolean;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_ScriptOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_script_api_v1_scripts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_scripts_api_v1_scripts_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptSearchHit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recommend_api_v1_scripts_recommend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_script_api_v1_scripts__script_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_script_api_v1_scripts__script_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_docs_api_v1_knowledge_docs_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_KnowledgeDocOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_doc_api_v1_knowledge_docs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_doc_api_v1_knowledge_docs_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeDocOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_doc_api_v1_knowledge_docs__doc_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

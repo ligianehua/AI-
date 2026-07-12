@@ -9,6 +9,7 @@ from arq import cron
 from arq.connections import RedisSettings
 
 from app.core.config import get_settings
+from app.tasks.embedding import embed_knowledge_doc_task, embed_script_task
 from app.tasks.profile import account_profile_task
 from app.tasks.risk_scan import risk_scan_task
 from app.tasks.scoring import score_lead_task
@@ -27,7 +28,13 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    functions = [score_lead_task, account_profile_task, risk_scan_task]
+    functions = [
+        score_lead_task,
+        account_profile_task,
+        risk_scan_task,
+        embed_script_task,
+        embed_knowledge_doc_task,
+    ]
     cron_jobs = [cron(risk_scan_task, hour=8, minute=0)]
     on_startup = startup
     on_shutdown = shutdown

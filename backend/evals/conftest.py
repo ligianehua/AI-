@@ -42,3 +42,36 @@ def require_llm_keys() -> None:
     cfg = get_ai_config()
     if not any(os.environ.get(p.api_key_env) for p in cfg.providers.values()):
         pytest.skip("未配置任何 LLM API key（.env），跳过 evals")
+
+
+# ---------- 检索类 eval 需要真 PG（复用 tests 的三级供给） ----------
+
+
+@pytest.fixture(scope="session")
+def database_url() -> Any:
+    from tests.conftest import _provision_pg, run_alembic
+
+    url, cleanup = _provision_pg()
+    try:
+        run_alembic(url, "upgrade", "head")
+        yield url
+    finally:
+        cleanup()
+
+
+@pytest.fixture(scope="session")
+async def engine(database_url: str) -> Any:
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
+
+    engine = create_async_engine(database_url, poolclass=NullPool)
+    yield engine
+    await engine.dispose()
+
+
+@pytest.fixture
+async def session(engine: Any) -> Any:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    async with async_sessionmaker(engine, expire_on_commit=False)() as s:
+        yield s

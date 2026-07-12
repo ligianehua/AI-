@@ -128,27 +128,28 @@ class LLMClient:
         latency_ms: int,
         status: str,
         error_msg: str | None = None,
-    ) -> None:
-        """写 llm_calls 记账；记账失败只记日志，不阻断业务调用。"""
+    ) -> uuid.UUID | None:
+        """写 llm_calls 记账，返回记录 id（用户反馈的落点）；记账失败只记日志，不阻断业务调用。"""
         try:
             async with self._sessionmaker()() as session:
-                session.add(
-                    LlmCall(
-                        user_id=user_id,
-                        task_type=task_type,
-                        provider=provider,
-                        model=model,
-                        tokens_in=tokens_in,
-                        tokens_out=tokens_out,
-                        cost_estimate=self._estimate_cost(model, tokens_in, tokens_out),
-                        latency_ms=latency_ms,
-                        status=status,
-                        error_msg=error_msg[:500] if error_msg else None,
-                    )
+                call = LlmCall(
+                    user_id=user_id,
+                    task_type=task_type,
+                    provider=provider,
+                    model=model,
+                    tokens_in=tokens_in,
+                    tokens_out=tokens_out,
+                    cost_estimate=self._estimate_cost(model, tokens_in, tokens_out),
+                    latency_ms=latency_ms,
+                    status=status,
+                    error_msg=error_msg[:500] if error_msg else None,
                 )
+                session.add(call)
                 await session.commit()
+                return call.id
         except Exception:
             logger.exception("llm_calls 记账失败（task_type=%s provider=%s）", task_type, provider)
+            return None
 
     async def _check_quota(self, user_id: uuid.UUID | None) -> None:
         limit = get_settings().llm_daily_token_limit_per_user
@@ -298,9 +299,17 @@ class LLMClient:
                 raise LLMOutputError("AI 返回格式不合法，已重试仍失败") from err2
 
     async def chat_stream(
-        self, task_type: str, messages: list[Message], *, user_id: uuid.UUID | None = None
+        self,
+        task_type: str,
+        messages: list[Message],
+        *,
+        user_id: uuid.UUID | None = None,
+        meta: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]:
-        """流式补全。仅在建立连接阶段降级；流中途出错直接报错并记账。"""
+        """流式补全。仅在建立连接阶段降级；流中途出错直接报错并记账。
+
+        meta：调用方传入 dict 时，流成功结束后写入 meta["llm_call_id"]（用户反馈落点）。
+        """
         await self._check_quota(user_id)
         route = resolve(task_type)
         assert route is not None
@@ -364,7 +373,7 @@ class LLMClient:
                 error_msg=str(exc),
             )
             raise LLMUnavailableError("AI 输出中断，请重试") from exc
-        await self._record(
+        call_id = await self._record(
             user_id=user_id,
             task_type=task_type,
             provider=route.provider_name,
@@ -374,6 +383,8 @@ class LLMClient:
             latency_ms=int((time.perf_counter() - started) * 1000),
             status="ok",
         )
+        if meta is not None and call_id is not None:
+            meta["llm_call_id"] = str(call_id)
 
     async def embed(
         self, texts: list[str], *, user_id: uuid.UUID | None = None

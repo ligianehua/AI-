@@ -1,0 +1,21 @@
+# 检索质量 golden set（针对 scripts.seed_scripts 的 12 条示例话术）。断言 expect_scenario 出现在 top-5。
+{"id": "ss-01", "input": {"query": "客户说太贵了怎么回复", "category": null}, "expect": {"scenario": "客户嫌贵-价值拆解"}}
+{"id": "ss-02", "input": {"query": "第一次给客户打电话怎么开场", "category": null}, "expect": {"scenario": "初次电话开场"}}
+{"id": "ss-03", "input": {"query": "展会认识的客户加了微信怎么破冰", "category": null}, "expect": {"scenario": "展会后微信破冰"}}
+{"id": "ss-04", "input": {"query": "怎么了解客户的管理痛点", "category": null}, "expect": {"scenario": "挖掘管理痛点"}}
+{"id": "ss-05", "input": {"query": "怎么问出客户的决策流程和预算", "category": null}, "expect": {"scenario": "确认决策流程"}}
+{"id": "ss-06", "input": {"query": "客户已经在用竞争对手的产品", "category": null}, "expect": {"scenario": "已有竞品-差异化"}}
+{"id": "ss-07", "input": {"query": "报价单发出去没回音了", "category": null}, "expect": {"scenario": "报价后跟进"}}
+{"id": "ss-08", "input": {"query": "客户要折扣怎么谈", "category": null}, "expect": {"scenario": "折扣申请话术"}}
+{"id": "ss-09", "input": {"query": "怎么推动客户尽快签合同", "category": null}, "expect": {"scenario": "推动签约"}}
+{"id": "ss-10", "input": {"query": "客户一直拖着不做决定", "category": null}, "expect": {"scenario": "决策拖延-制造紧迫"}}
+{"id": "ss-11", "input": {"query": "老客户快到期了怎么谈续约", "category": null}, "expect": {"scenario": "老客户续约"}}
+{"id": "ss-12", "input": {"query": "客户很久不用我们产品了怎么激活", "category": null}, "expect": {"scenario": "沉默客户唤醒"}}
+{"id": "ss-13", "input": {"query": "嫌贵 预算不够 ROI", "category": "objection"}, "expect": {"scenario": "客户嫌贵-价值拆解"}}
+{"id": "ss-14", "input": {"query": "电话 一分钟 约时间", "category": "opening"}, "expect": {"scenario": "初次电话开场"}}
+{"id": "ss-15", "input": {"query": "销售填报表浪费时间", "category": null}, "expect": {"scenario": "挖掘管理痛点"}}
+{"id": "ss-16", "input": {"query": "IT 财务 一起评估 选型", "category": null}, "expect": {"scenario": "确认决策流程"}}
+{"id": "ss-17", "input": {"query": "对手家产品不好用想换", "category": null}, "expect": {"scenario": "已有竞品-差异化"}}
+{"id": "ss-18", "input": {"query": "月底签约赶实施排期", "category": null}, "expect": {"scenario": "推动签约"}}
+{"id": "ss-19", "input": {"query": "分期付款 裁剪模块 预算问题", "category": null}, "expect": {"scenario": "报价后跟进"}}
+{"id": "ss-20", "input": {"query": "免费健康检查 提升活跃度", "category": null}, "expect": {"scenario": "沉默客户唤醒"}}

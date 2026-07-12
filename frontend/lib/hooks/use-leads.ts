@@ -44,5 +44,6 @@ export function useLeads(filters: LeadFilters) {
       );
       return scoring ? 4000 : false;
     },
+    refetchIntervalInBackground: true,
   });
 }

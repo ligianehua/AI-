@@ -1036,7 +1036,7 @@ export interface components {
         };
         /**
          * DashboardSummary
-         * @description 工作台摘要（按当前用户可见域统计）。金额单位 CNY。
+         * @description 工作台摘要（统计按当前用户可见域；待办只看本人）。金额单位 CNY。
          */
         DashboardSummary: {
             /** Lead Count */
@@ -1047,6 +1047,12 @@ export interface components {
             opportunity_count: number;
             /** Pipeline Amount */
             pipeline_amount: number;
+            /** Won Amount This Month */
+            won_amount_this_month: number;
+            /** Funnel */
+            funnel: components["schemas"]["FunnelItem"][];
+            /** Todos */
+            todos: components["schemas"]["TodoItem"][];
         };
         /** DuplicateWarning */
         DuplicateWarning: {
@@ -1071,6 +1077,12 @@ export interface components {
             llm_call_id: string;
             /** Feedback */
             feedback: number;
+        };
+        /** FunnelItem */
+        FunnelItem: {
+            stage: components["schemas"]["OpportunityStage"];
+            /** Count */
+            count: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1669,6 +1681,29 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * TodoItem
+         * @description 今日待办：next_action 已到期（含逾期）的跟进计划。
+         */
+        TodoItem: {
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /** Next Action */
+            next_action: string;
+            /**
+             * Next Action Date
+             * Format: date
+             */
+            next_action_date: string;
+            related_type: components["schemas"]["ActivityRelatedType"];
+            /** Related Label */
+            related_label: string;
+            /** Overdue */
+            overdue: boolean;
         };
         /** TokenResponse */
         TokenResponse: {

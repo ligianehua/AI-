@@ -3932,6 +3932,24 @@
           "pipeline_amount": {
             "type": "number",
             "title": "Pipeline Amount"
+          },
+          "won_amount_this_month": {
+            "type": "number",
+            "title": "Won Amount This Month"
+          },
+          "funnel": {
+            "items": {
+              "$ref": "#/components/schemas/FunnelItem"
+            },
+            "type": "array",
+            "title": "Funnel"
+          },
+          "todos": {
+            "items": {
+              "$ref": "#/components/schemas/TodoItem"
+            },
+            "type": "array",
+            "title": "Todos"
           }
         },
         "type": "object",
@@ -3939,10 +3957,13 @@
           "lead_count",
           "account_count",
           "opportunity_count",
-          "pipeline_amount"
+          "pipeline_amount",
+          "won_amount_this_month",
+          "funnel",
+          "todos"
         ],
         "title": "DashboardSummary",
-        "description": "工作台摘要（按当前用户可见域统计）。金额单位 CNY。"
+        "description": "工作台摘要（统计按当前用户可见域；待办只看本人）。金额单位 CNY。"
       },
       "DuplicateWarning": {
         "properties": {
@@ -3993,6 +4014,23 @@
           "feedback"
         ],
         "title": "FeedbackRequest"
+      },
+      "FunnelItem": {
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/OpportunityStage"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "count"
+        ],
+        "title": "FunnelItem"
       },
       "HTTPValidationError": {
         "properties": {
@@ -5796,6 +5834,46 @@
         ],
         "title": "TimelineItem",
         "description": "跨 lead/account/opportunity 聚合的跟进记录。"
+      },
+      "TodoItem": {
+        "properties": {
+          "activity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Activity Id"
+          },
+          "next_action": {
+            "type": "string",
+            "title": "Next Action"
+          },
+          "next_action_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Action Date"
+          },
+          "related_type": {
+            "$ref": "#/components/schemas/ActivityRelatedType"
+          },
+          "related_label": {
+            "type": "string",
+            "title": "Related Label"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity_id",
+          "next_action",
+          "next_action_date",
+          "related_type",
+          "related_label",
+          "overdue"
+        ],
+        "title": "TodoItem",
+        "description": "今日待办：next_action 已到期（含逾期）的跟进计划。"
       },
       "TokenResponse": {
         "properties": {

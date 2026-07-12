@@ -24,3 +24,9 @@ seed:
 gen-api:
 	cd backend && uv run python -m scripts.export_openapi ../frontend/openapi.json
 	cd frontend && npm run gen-api
+
+e2e:  # 需要后端已起且已 seed
+	cd frontend && npm run e2e
+
+prod:
+	docker compose -f docker-compose.prod.yml up -d --build

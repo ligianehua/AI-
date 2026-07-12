@@ -26,6 +26,20 @@ class DecisionChainItem(BaseModel):
     attitude: str = Field(description="对合作的态度判断")
 
 
+class NextActionItem(BaseModel):
+    action: str = Field(min_length=1, description="具体可执行的下一步动作")
+    reason: str = Field(min_length=1, description="理由，必须引用真实跟进内容")
+    suggested_script_scenario: (
+        Literal["opening", "discovery", "objection", "pricing", "closing", "retention"] | None
+    ) = Field(default=None, description="建议使用的话术场景（可跳转话术生成），无则为 null")
+
+
+class NextActionOutput(BaseModel):
+    """商机 AI 下一步建议：正好 3 条。"""
+
+    actions: list[NextActionItem] = Field(min_length=3, max_length=3)
+
+
 class AccountProfileOutput(BaseModel):
     """客户 AI 画像（PLAN §6.2 结构）。信息不足必须明说，禁止编造。"""
 

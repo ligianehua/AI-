@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
 import { clearToken, getToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "工作台" },
   { href: "/leads", label: "线索" },
   { href: "/accounts", label: "客户" },
+  { href: "/opportunities", label: "商机" },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -50,6 +52,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </Link>
             ))}
           </nav>
+          <NotificationBell />
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             退出登录
           </Button>

@@ -406,6 +406,196 @@ export interface paths {
         patch: operations["update_contact_api_v1_contacts__contact_id__patch"];
         trace?: never;
     };
+    "/api/v1/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 创建商机 */
+        post: operations["create_opportunity_api_v1_opportunities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/opportunities/kanban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 阶段看板（含金额/加权金额汇总） */
+        get: operations["get_kanban_api_v1_opportunities_kanban_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/opportunities/{opportunity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 商机详情 */
+        get: operations["get_opportunity_api_v1_opportunities__opportunity_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 更新商机 */
+        patch: operations["update_opportunity_api_v1_opportunities__opportunity_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/opportunities/{opportunity_id}/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 换阶段（won 需金额确认 / lost 需原因） */
+        patch: operations["change_stage_api_v1_opportunities__opportunity_id__stage_patch"];
+        trace?: never;
+    };
+    "/api/v1/opportunities/{opportunity_id}/next-actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** AI 下一步建议（3 条） */
+        get: operations["get_next_actions_api_v1_opportunities__opportunity_id__next_actions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 某实体的跟进记录列表 */
+        get: operations["list_activities_api_v1_activities_get"];
+        put?: never;
+        /** 添加跟进记录（线索跟进会自动触发评分重算） */
+        post: operations["create_activity_api_v1_activities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activities/{activity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除跟进记录（仅本人，软删） */
+        delete: operations["delete_activity_api_v1_activities__activity_id__delete"];
+        options?: never;
+        head?: never;
+        /** 更新跟进记录（仅本人） */
+        patch: operations["update_activity_api_v1_activities__activity_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 风险提醒列表（仅本人） */
+        get: operations["list_notifications_api_v1_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 未读数（导航红点） */
+        get: operations["get_unread_count_api_v1_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 标记已读 */
+        post: operations["mark_read_api_v1_notifications__notification_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 全部标记已读 */
+        post: operations["mark_all_read_api_v1_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -531,6 +721,22 @@ export interface components {
             /** Remark */
             remark?: string | null;
         };
+        /** ActivityCreate */
+        ActivityCreate: {
+            related_type: components["schemas"]["ActivityRelatedType"];
+            /**
+             * Related Id
+             * Format: uuid
+             */
+            related_id: string;
+            type: components["schemas"]["ActivityType"];
+            /** Content */
+            content: string;
+            /** Next Action */
+            next_action?: string | null;
+            /** Next Action Date */
+            next_action_date?: string | null;
+        };
         /** ActivityOut */
         ActivityOut: {
             /**
@@ -538,6 +744,12 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            related_type: components["schemas"]["ActivityRelatedType"];
+            /**
+             * Related Id
+             * Format: uuid
+             */
+            related_id: string;
             type: components["schemas"]["ActivityType"];
             /** Content */
             content: string;
@@ -550,6 +762,8 @@ export interface components {
              * Format: uuid
              */
             owner_id: string;
+            /** Owner Name */
+            owner_name?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -566,6 +780,16 @@ export interface components {
          * @enum {string}
          */
         ActivityType: "call" | "visit" | "wechat" | "email" | "meeting" | "other";
+        /** ActivityUpdate */
+        ActivityUpdate: {
+            type?: components["schemas"]["ActivityType"] | null;
+            /** Content */
+            content?: string | null;
+            /** Next Action */
+            next_action?: string | null;
+            /** Next Action Date */
+            next_action_date?: string | null;
+        };
         /** AssignRequest */
         AssignRequest: {
             /** Lead Ids */
@@ -722,6 +946,21 @@ export interface components {
             row: number;
             /** Reason */
             reason: string;
+        };
+        /** KanbanColumn */
+        KanbanColumn: {
+            stage: components["schemas"]["OpportunityStage"];
+            /** Total Amount */
+            total_amount: number;
+            /** Weighted Amount */
+            weighted_amount: number;
+            /** Items */
+            items: components["schemas"]["OpportunityOut"][];
+        };
+        /** KanbanResponse */
+        KanbanResponse: {
+            /** Columns */
+            columns: components["schemas"]["KanbanColumn"][];
         };
         /** LeadCreate */
         LeadCreate: {
@@ -898,6 +1137,129 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** NextActionsResponse */
+        NextActionsResponse: {
+            /** Actions */
+            actions: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** NotificationOut */
+        NotificationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            type: components["schemas"]["NotificationType"];
+            /** Title */
+            title: string;
+            /** Body */
+            body: string | null;
+            /** Related Type */
+            related_type: string | null;
+            /** Related Id */
+            related_id: string | null;
+            /** Read At */
+            read_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * NotificationType
+         * @enum {string}
+         */
+        NotificationType: "stale_no_followup" | "stage_stuck" | "next_action_due";
+        /** OpportunityCreate */
+        OpportunityCreate: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Amount
+             * @default 0
+             */
+            amount: number | string;
+            /** Expected Close Date */
+            expected_close_date?: string | null;
+        };
+        /** OpportunityOut */
+        OpportunityOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Account Name */
+            account_name?: string | null;
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            stage: components["schemas"]["OpportunityStage"];
+            /** Probability */
+            probability: number;
+            /** Expected Close Date */
+            expected_close_date: string | null;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Lost Reason */
+            lost_reason: string | null;
+            /** Stage History */
+            stage_history: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Stuck Days
+             * @default 0
+             */
+            stuck_days: number;
+            /** Last Activity At */
+            last_activity_at?: string | null;
+        };
+        /**
+         * OpportunityStage
+         * @enum {string}
+         */
+        OpportunityStage: "initial" | "need_confirmed" | "proposal" | "negotiation" | "won" | "lost";
+        /** OpportunityUpdate */
+        OpportunityUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Amount */
+            amount?: number | string | null;
+            /** Probability */
+            probability?: number | null;
+            /** Expected Close Date */
+            expected_close_date?: string | null;
+        };
         /** PageResult[AccountOut] */
         PageResult_AccountOut_: {
             /** Items */
@@ -913,6 +1275,17 @@ export interface components {
         PageResult_LeadOut_: {
             /** Items */
             items: components["schemas"]["LeadOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** PageResult[NotificationOut] */
+        PageResult_NotificationOut_: {
+            /** Items */
+            items: components["schemas"]["NotificationOut"][];
             /** Total */
             total: number;
             /** Page */
@@ -966,6 +1339,14 @@ export interface components {
          * @enum {string}
          */
         Role: "sales" | "manager" | "admin";
+        /** StageChangeRequest */
+        StageChangeRequest: {
+            stage: components["schemas"]["OpportunityStage"];
+            /** Lost Reason */
+            lost_reason?: string | null;
+            /** Amount */
+            amount?: number | string | null;
+        };
         /** TeamCreate */
         TeamCreate: {
             /** Name */
@@ -1028,6 +1409,11 @@ export interface components {
              * @default bearer
              */
             token_type: string;
+        };
+        /** UnreadCountResponse */
+        UnreadCountResponse: {
+            /** Unread */
+            unread: number;
         };
         /** UserCreate */
         UserCreate: {
@@ -2151,6 +2537,420 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    create_opportunity_api_v1_opportunities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpportunityCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_kanban_api_v1_opportunities_kanban_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KanbanResponse"];
+                };
+            };
+        };
+    };
+    get_opportunity_api_v1_opportunities__opportunity_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_opportunity_api_v1_opportunities__opportunity_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpportunityUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_stage_api_v1_opportunities__opportunity_id__stage_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_next_actions_api_v1_opportunities__opportunity_id__next_actions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextActionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_activities_api_v1_activities_get: {
+        parameters: {
+            query: {
+                related_type: components["schemas"]["ActivityRelatedType"];
+                related_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_activity_api_v1_activities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_activity_api_v1_activities__activity_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_activity_api_v1_activities__activity_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notifications_api_v1_notifications_get: {
+        parameters: {
+            query?: {
+                unread_only?: boolean;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_NotificationOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unread_count_api_v1_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountResponse"];
+                };
+            };
+        };
+    };
+    mark_read_api_v1_notifications__notification_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_all_read_api_v1_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

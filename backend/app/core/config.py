@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # 任务模式：arq（Redis 队列，生产）| local（进程内后台执行，无 Redis 的开发环境）
     task_mode: str = "arq"
 
+    # 风险提醒阈值（天）
+    risk_stale_days: int = 7  # 商机无跟进
+    risk_stuck_days: int = 21  # 阶段停滞
+
     # M0 临时引导账号（M1 落库后由 users 表取代）
     admin_email: str = "admin@example.com"
     admin_password: str = "admin123"

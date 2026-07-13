@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, model_validator
 
@@ -23,4 +23,5 @@ def forbid_explicit_null(*field_names: str) -> Any:
                     raise ValueError(f"字段 {field} 不能为 null")
         return values
 
-    return model_validator(mode="before")(classmethod(_check))
+    # classmethod 包装是 pydantic 对类体内复用 validator 的运行时要求，类型层面直接 cast
+    return model_validator(mode="before")(cast(Any, classmethod(_check)))

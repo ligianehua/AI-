@@ -1,6 +1,6 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
-import { getToken } from "@/lib/auth";
+import { clearToken, getToken } from "@/lib/auth";
 import type { paths } from "@/lib/api/schema";
 
 const authMiddleware: Middleware = {
@@ -10,6 +10,18 @@ const authMiddleware: Middleware = {
       request.headers.set("Authorization", `Bearer ${token}`);
     }
     return request;
+  },
+  onResponse({ response }) {
+    // 令牌过期/被吊销/账号停用：全局登出，避免停留在只剩伪缓存的页面
+    if (
+      response.status === 401 &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/login")
+    ) {
+      clearToken();
+      window.location.href = "/login";
+    }
+    return response;
   },
 };
 

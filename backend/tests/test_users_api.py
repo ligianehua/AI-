@@ -123,8 +123,19 @@ async def test_admin_delete_user(client: AsyncClient, roles: RoleUsers, login: L
     emails = {u["email"] for u in resp.json()["items"]}
     assert "sales_a2@test.cn" not in emails
 
+    # 被删用户不能再登录
     resp = await client.post(
         "/api/v1/auth/login",
         json={"email": "sales_a2@test.cn", "password": "password123"},
     )
     assert resp.status_code == 401
+
+    # 软删后邮箱可复用（回归 DATA-05：部分唯一索引），新用户可正常登录
+    payload = _new_user_payload("sales_a2@test.cn")
+    resp = await client.post("/api/v1/users", json=payload, headers=headers)
+    assert resp.status_code == 201
+    resp = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "sales_a2@test.cn", "password": "password123"},
+    )
+    assert resp.status_code == 200

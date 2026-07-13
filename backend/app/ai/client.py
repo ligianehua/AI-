@@ -16,8 +16,6 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from datetime import time as dt_time
 from decimal import Decimal
 from functools import lru_cache
 from typing import Any, cast
@@ -37,6 +35,7 @@ from app.core.exceptions import (
     LLMQuotaExceededError,
     LLMUnavailableError,
 )
+from app.core.timezone import biz_day_start_utc
 from app.models.llm_call import LlmCall
 
 logger = logging.getLogger(__name__)
@@ -155,7 +154,7 @@ class LLMClient:
         limit = get_settings().llm_daily_token_limit_per_user
         if not limit or user_id is None:
             return
-        today_start = datetime.combine(datetime.now(UTC).date(), dt_time.min, tzinfo=UTC)
+        today_start = biz_day_start_utc()  # 日限额按 Asia/Shanghai 日界
         async with self._sessionmaker()() as session:
             used = await session.scalar(
                 select(func.coalesce(func.sum(LlmCall.tokens_in + LlmCall.tokens_out), 0)).where(
@@ -346,9 +345,21 @@ class LLMClient:
                 raise LLMUnavailableError("AI 服务暂不可用，请稍后再试") from exc
             logger.warning("流式调用降级：%s -> %s", route.provider_name, fb.provider_name)
             route = fb
+            fb_started = time.perf_counter()
             try:
                 stream = await _open(route)
             except Exception as exc2:
+                await self._record(
+                    user_id=user_id,
+                    task_type=task_type,
+                    provider=route.provider_name,
+                    model=route.model,
+                    tokens_in=0,
+                    tokens_out=0,
+                    latency_ms=int((time.perf_counter() - fb_started) * 1000),
+                    status=_failure_status(exc2) or "error",
+                    error_msg=str(exc2),
+                )
                 raise LLMUnavailableError("AI 服务暂不可用，请稍后再试") from exc2
 
         tokens_in = 0

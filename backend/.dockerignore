@@ -1,0 +1,12 @@
+# 构建上下文排除：防止本地运行产物/敏感文件进入镜像
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+data/uploads/
+tests/
+evals/
+.env
+*.log

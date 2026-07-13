@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import ScriptCategory
+from app.schemas.common import forbid_explicit_null
 
 
 class ScriptCreate(BaseModel):
@@ -14,6 +15,8 @@ class ScriptCreate(BaseModel):
 
 
 class ScriptUpdate(BaseModel):
+    _no_null = forbid_explicit_null("category", "scenario", "content", "tags", "is_active")
+
     category: ScriptCategory | None = None
     scenario: str | None = Field(default=None, min_length=1, max_length=200)
     content: str | None = Field(default=None, min_length=1, max_length=5000)

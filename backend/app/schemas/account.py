@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import ActivityRelatedType, ActivityType
+from app.schemas.common import forbid_explicit_null
 from app.schemas.contact import ContactOut
 
 
@@ -18,6 +19,8 @@ class AccountCreate(BaseModel):
 
 
 class AccountUpdate(BaseModel):
+    _no_null = forbid_explicit_null("name")
+
     name: str | None = Field(default=None, min_length=1, max_length=200)
     industry: str | None = Field(default=None, max_length=50)
     size: str | None = Field(default=None, max_length=20)

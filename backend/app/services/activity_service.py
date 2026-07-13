@@ -77,6 +77,10 @@ async def _get_own_activity(session: AsyncSession, actor: User, activity_id: uui
         raise NotFoundError("跟进记录不存在")
     if actor.role != Role.ADMIN and activity.owner_id != actor.id:
         raise PermissionDeniedError("只能操作自己的跟进记录")
+    # 宿主实体也必须仍在可见域内（如被调离团队后，不能再改原团队商机下的记录）
+    await _check_related_access(
+        session, actor, ActivityRelatedType(activity.related_type), activity.related_id
+    )
     return activity
 
 

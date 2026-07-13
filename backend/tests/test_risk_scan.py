@@ -155,3 +155,22 @@ async def test_dedupe_unread_notifications(session: AsyncSession, roles: RoleUse
     assert first == 2  # stale + stuck
     second = await scan_risks(session, now=NOW)
     assert second == 0  # 未读去重
+
+
+async def test_next_action_due_dedupe(session: AsyncSession, roles: RoleUsers) -> None:
+    """到期提醒的去重键与写入键必须一致（回归：曾因键不一致导致每日重复轰炸）。"""
+    opp = await _seed_opp(session, roles.sales_a, stage_entered=NOW - timedelta(days=1))
+    await _add_activity(
+        session,
+        roles.sales_a,
+        opp,
+        NOW - timedelta(days=2),
+        next_action="回访确认",
+        next_action_date=NOW - timedelta(days=1),
+    )
+    first = await scan_risks(session, now=NOW)
+    assert first == 1
+    second = await scan_risks(session, now=NOW)
+    assert second == 0
+    rows = await _notifications(session, NotificationType.NEXT_ACTION_DUE)
+    assert len(rows) == 1

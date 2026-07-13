@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import LeadSource, LeadStatus
 from app.schemas.activity import ActivityOut
+from app.schemas.common import forbid_explicit_null
 
 PHONE_PATTERN = r"^1\d{10}$"
 
@@ -22,6 +23,8 @@ class LeadCreate(BaseModel):
 
 
 class LeadUpdate(BaseModel):
+    _no_null = forbid_explicit_null("source", "account_name", "status")
+
     source: LeadSource | None = None
     account_name: str | None = Field(default=None, min_length=1, max_length=200)
     contact_name: str | None = Field(default=None, max_length=50)

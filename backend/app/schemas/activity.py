@@ -4,6 +4,7 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import ActivityRelatedType, ActivityType
+from app.schemas.common import forbid_explicit_null
 
 
 class ActivityCreate(BaseModel):
@@ -16,6 +17,8 @@ class ActivityCreate(BaseModel):
 
 
 class ActivityUpdate(BaseModel):
+    _no_null = forbid_explicit_null("type", "content")
+
     type: ActivityType | None = None
     content: str | None = Field(default=None, min_length=1, max_length=5000)
     next_action: str | None = Field(default=None, max_length=1000)

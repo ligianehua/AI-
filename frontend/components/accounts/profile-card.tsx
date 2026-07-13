@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime } from "@/lib/datetime";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +37,7 @@ export function ProfileCard({
           AI 画像
           {updatedAt && (
             <span className="ml-2 text-xs font-normal text-muted-foreground">
-              更新于 {new Date(updatedAt).toLocaleString("zh-CN")}
+              更新于 {formatDateTime(updatedAt)}
             </span>
           )}
         </CardTitle>

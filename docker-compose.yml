@@ -25,6 +25,18 @@ services:
       timeout: 3s
       retries: 10
 
+  migrate:
+    build: ./backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/ai_sales
+    command: uv run alembic upgrade head
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
   backend:
     build: ./backend
     env_file:
@@ -39,8 +51,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     command: uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -57,8 +69,8 @@ services:
       - ./backend:/app
       - backend-venv:/app/.venv
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     command: uv run arq app.tasks.worker.WorkerSettings --watch app

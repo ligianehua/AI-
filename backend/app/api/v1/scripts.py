@@ -68,7 +68,12 @@ async def search_scripts(
     llm: LLMClientDep,
 ) -> list[ScriptSearchHit]:
     hits = await rag.search_scripts(
-        session, body.query, category=body.category, top_k=body.top_k, llm=llm
+        session,
+        body.query,
+        category=body.category,
+        top_k=body.top_k,
+        llm=llm,
+        user_id=current_user.id,
     )
     return [
         ScriptSearchHit(script=script_service.to_out(h.script), score=round(h.score, 4))

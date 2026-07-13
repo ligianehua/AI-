@@ -67,15 +67,22 @@ export default function LeadsPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
 
   async function handleRescore(lead: LeadOut) {
-    const { error } = await api.POST("/api/v1/leads/{lead_id}/score", {
-      params: { path: { lead_id: lead.id } },
-    });
-    if (error) {
-      toast.error("评分任务提交失败");
-      return;
+    try {
+      const { error } = await api.POST("/api/v1/leads/{lead_id}/score", {
+        params: { path: { lead_id: lead.id } },
+      });
+      if (error) {
+        toast.error("评分任务提交失败");
+        return;
+      }
+      toast.success("评分任务已提交，稍后自动刷新");
+      // 重算的线索 score 非 null 不会触发轮询，延迟刷新两次以带回新分数
+      for (const delay of [3000, 8000]) {
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: ["leads"] }), delay);
+      }
+    } catch {
+      toast.error("网络异常，请重试");
     }
-    toast.success("评分任务已提交，稍后自动刷新");
-    queryClient.invalidateQueries({ queryKey: ["leads"] });
   }
 
   async function handleStatusChange(lead: LeadOut, newStatus: LeadStatus) {
@@ -103,6 +110,7 @@ export default function LeadsPage() {
           onValueChange={(v) => {
             setStatus(v as LeadStatus | "all");
             setPage(1);
+            setSelected([]); // 切换筛选后清空勾选，防止分配到不可见记录
           }}
         >
           <SelectTrigger className="w-32">
@@ -232,7 +240,10 @@ export default function LeadsPage() {
             variant="outline"
             size="sm"
             disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
+            onClick={() => {
+              setPage((p) => p - 1);
+              setSelected([]);
+            }}
           >
             上一页
           </Button>
@@ -243,7 +254,10 @@ export default function LeadsPage() {
             variant="outline"
             size="sm"
             disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => {
+              setPage((p) => p + 1);
+              setSelected([]);
+            }}
           >
             下一页
           </Button>

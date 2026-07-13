@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.timezone import biz_month_start_utc, biz_today
 from app.models.account import Account
 from app.models.activity import Activity
 from app.models.base import AppModel
@@ -24,8 +25,8 @@ async def _count[M: AppModel](session: AsyncSession, stmt: Select[tuple[M]]) -> 
 
 
 async def _won_amount_this_month(session: AsyncSession, actor: User, now: datetime) -> float:
-    """won 商机按进入赢单阶段的时间归月（stage_history 最后一条）。"""
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    """won 商机按进入赢单阶段的时间归月（stage_history 最后一条；Asia/Shanghai 月界）。"""
+    month_start = biz_month_start_utc(now)
     won_stmt = visibility_scope(
         select(Opportunity).where(
             Opportunity.deleted_at.is_(None), Opportunity.stage == OpportunityStage.WON
@@ -41,8 +42,8 @@ async def _won_amount_this_month(session: AsyncSession, actor: User, now: dateti
 
 
 async def _todos(session: AsyncSession, actor: User, now: datetime) -> list[TodoItem]:
-    """本人 next_action 已到期（含逾期 7 天内）的跟进计划，最多 10 条。"""
-    today = now.date()
+    """本人 next_action 已到期（含逾期）的跟进计划，最多 10 条（Asia/Shanghai 日界）。"""
+    today = biz_today(now)
     rows = list(
         await session.scalars(
             select(Activity)

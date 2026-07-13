@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatDate } from "@/lib/datetime";
 import { api } from "@/lib/api/client";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -45,18 +47,30 @@ export function NotificationBell() {
     enabled: open,
   });
 
-  async function markRead(id: string) {
-    await api.POST("/api/v1/notifications/{notification_id}/read", {
-      params: { path: { notification_id: id } },
-    });
+  function refreshNotificationCaches() {
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
     queryClient.invalidateQueries({ queryKey: ["unread-count"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-notifications"] }); // 工作台风险卡同步
+  }
+
+  async function markRead(id: string) {
+    try {
+      await api.POST("/api/v1/notifications/{notification_id}/read", {
+        params: { path: { notification_id: id } },
+      });
+      refreshNotificationCaches();
+    } catch {
+      toast.error("网络异常，请重试");
+    }
   }
 
   async function markAllRead() {
-    await api.POST("/api/v1/notifications/read-all");
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    queryClient.invalidateQueries({ queryKey: ["unread-count"] });
+    try {
+      await api.POST("/api/v1/notifications/read-all");
+      refreshNotificationCaches();
+    } catch {
+      toast.error("网络异常，请重试");
+    }
   }
 
   return (
@@ -88,7 +102,7 @@ export function NotificationBell() {
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{TYPE_LABELS[n.type] ?? n.type}</Badge>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(n.created_at).toLocaleDateString("zh-CN")}
+                    {formatDate(n.created_at)}
                   </span>
                   {!n.read_at && (
                     <Button

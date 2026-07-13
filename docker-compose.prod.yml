@@ -18,6 +18,9 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: redis-server --appendonly yes  # 持久化：重启不丢待执行任务
+    volumes:
+      - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -81,8 +84,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        # 浏览器访问后端的地址：改成你的域名/公网地址
-        NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-http://localhost:8000}
+        # 浏览器访问后端的地址（与 .env.example 同名变量，构建期内联）
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
     depends_on:
@@ -91,4 +94,5 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
   uploads:

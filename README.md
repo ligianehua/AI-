@@ -13,7 +13,10 @@ FastAPI (Python 3.12, uv) · Next.js + TypeScript + shadcn/ui · PostgreSQL 16 +
 
 ```bash
 cp .env.example .env    # 按需填写密钥（LLM key M2 起才需要）
-make dev                # docker compose 启动 pg + redis + 前后端（热重载）
+make dev                # docker compose 启动 pg + redis + 前后端（迁移自动执行）
+# 首次启动后灌演示数据（默认账号来自这里）：
+docker compose exec backend uv run python -m scripts.seed
+docker compose exec backend uv run python -m scripts.seed_scripts
 ```
 
 - 前端：http://localhost:3000 （默认账号 admin@example.com / admin123，见 .env）

@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import OpportunityStage
+from app.schemas.common import forbid_explicit_null
 
 
 class OpportunityCreate(BaseModel):
@@ -16,6 +17,8 @@ class OpportunityCreate(BaseModel):
 
 
 class OpportunityUpdate(BaseModel):
+    _no_null = forbid_explicit_null("name", "amount", "probability")
+
     name: str | None = Field(default=None, min_length=1, max_length=200)
     amount: Decimal | None = Field(default=None, ge=0, le=Decimal("999999999999"))
     probability: int | None = Field(default=None, ge=0, le=100)

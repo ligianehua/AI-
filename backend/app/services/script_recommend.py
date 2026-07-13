@@ -109,14 +109,16 @@ async def recommend_stream(
         query = " ".join(p for p in query_parts if p)
 
         script_hits = await rag.search_scripts(
-            session, query, category=payload.scenario, top_k=5, llm=llm
+            session, query, category=payload.scenario, top_k=5, llm=llm, user_id=actor.id
         )
-        knowledge_hits = await rag.search_knowledge(session, query, top_k=3, llm=llm)
+        knowledge_hits = await rag.search_knowledge(
+            session, query, top_k=3, llm=llm, user_id=actor.id
+        )
 
         yield sse_event(
             "sources",
             {
-                "no_reference": not script_hits,
+                "no_reference": not script_hits and not knowledge_hits,
                 "scripts": [
                     {
                         "id": str(h.script.id),

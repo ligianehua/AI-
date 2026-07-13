@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/datetime";
 import { api } from "@/lib/api/client";
 
 export default function AccountsPage() {
@@ -100,7 +101,7 @@ export default function AccountsPage() {
                   <TableCell>{account.owner_name ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {account.ai_profile_updated_at
-                      ? new Date(account.ai_profile_updated_at).toLocaleDateString("zh-CN")
+                      ? formatDate(account.ai_profile_updated_at)
                       : "未生成"}
                   </TableCell>
                 </TableRow>

@@ -52,11 +52,22 @@ async def _run_local(task_name: str, args: tuple[Any, ...]) -> None:
         logger.exception("本地任务执行失败：%s%r", task_name, args)
 
 
-async def enqueue(task_name: str, *args: Any) -> None:
-    if get_settings().task_mode == "arq":
-        pool = await _get_pool()
-        await pool.enqueue_job(task_name, *args)
-    else:
-        task = asyncio.create_task(_run_local(task_name, args))
-        _local_tasks.add(task)
-        task.add_done_callback(_local_tasks.discard)
+async def enqueue(task_name: str, *args: Any) -> bool:
+    """入队后台任务。返回是否成功。
+
+    投递失败（如 Redis 短暂不可用）只记日志不抛异常：业务数据已 commit，
+    抛错会让接口 500 但数据已存在，反而诱导用户重复提交；丢失的任务均有
+    手动重试入口（线索手动重算、文档删除重传等）。调用方可按返回值补偿。
+    """
+    try:
+        if get_settings().task_mode == "arq":
+            pool = await _get_pool()
+            await pool.enqueue_job(task_name, *args)
+        else:
+            task = asyncio.create_task(_run_local(task_name, args))
+            _local_tasks.add(task)
+            task.add_done_callback(_local_tasks.discard)
+        return True
+    except Exception:
+        logger.exception("任务入队失败：%s%r（业务数据不受影响，可手动重试）", task_name, args)
+        return False

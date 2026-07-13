@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDate } from "@/lib/datetime";
 import { api, apiErrorMessage } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import {
@@ -143,7 +144,7 @@ function ActivitySection({ opportunityId }: { opportunityId: string }) {
         {(activities ?? []).map((a) => (
           <li key={a.id} className="rounded-md bg-muted/50 px-3 py-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{new Date(a.created_at).toLocaleDateString("zh-CN")}</span>
+              <span>{formatDate(a.created_at)}</span>
               <Badge variant="outline">{ACTIVITY_TYPE_LABELS[a.type]}</Badge>
               <span>{a.owner_name}</span>
             </div>
@@ -165,8 +166,10 @@ function ActivitySection({ opportunityId }: { opportunityId: string }) {
 }
 
 function NextActionsSection({ opportunityId }: { opportunityId: string }) {
+  const queryClient = useQueryClient();
   const [actions, setActions] = useState<NextActionItem[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [savedIdx, setSavedIdx] = useState<Set<number>>(new Set());
 
   async function handleLoad() {
     setLoading(true);
@@ -180,8 +183,40 @@ function NextActionsSection({ opportunityId }: { opportunityId: string }) {
         return;
       }
       setActions(data.actions as unknown as NextActionItem[]);
+      setSavedIdx(new Set());
+    } catch {
+      toast.error("网络异常，请重试");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToTodo(action: NextActionItem, index: number) {
+    // 一键转任务（PLAN §6.3）：以明天为期限记入跟进计划，进入今日待办/风险扫描体系
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    try {
+      const { error } = await api.POST("/api/v1/activities", {
+        body: {
+          related_type: "opportunity",
+          related_id: opportunityId,
+          type: "other",
+          content: `[AI 建议转任务] ${action.reason}`,
+          next_action: action.action,
+          next_action_date: tomorrowStr,
+        },
+      });
+      if (error) {
+        toast.error(`转任务失败：${apiErrorMessage(error)}`);
+        return;
+      }
+      toast.success("已转为待办（期限：明天）");
+      setSavedIdx((prev) => new Set(prev).add(index));
+      queryClient.invalidateQueries({ queryKey: ["opp-activities", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    } catch {
+      toast.error("网络异常，请重试");
     }
   }
 
@@ -194,14 +229,26 @@ function NextActionsSection({ opportunityId }: { opportunityId: string }) {
         <ol className="space-y-2 text-sm">
           {actions.map((a, i) => (
             <li key={i} className="rounded-md border px-3 py-2">
-              <p className="font-medium">
-                {i + 1}. {a.action}
-                {a.suggested_script_scenario && (
-                  <Badge variant="secondary" className="ml-2">
-                    话术：{SCENARIO_LABELS[a.suggested_script_scenario] ?? a.suggested_script_scenario}
-                  </Badge>
-                )}
-              </p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium">
+                  {i + 1}. {a.action}
+                  {a.suggested_script_scenario && (
+                    <Badge variant="secondary" className="ml-2">
+                      话术：
+                      {SCENARIO_LABELS[a.suggested_script_scenario] ?? a.suggested_script_scenario}
+                    </Badge>
+                  )}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 shrink-0 px-2 text-xs"
+                  disabled={savedIdx.has(i)}
+                  onClick={() => handleToTodo(a, i)}
+                >
+                  {savedIdx.has(i) ? "已转待办" : "转待办"}
+                </Button>
+              </div>
               <p className="text-muted-foreground">{a.reason}</p>
             </li>
           ))}

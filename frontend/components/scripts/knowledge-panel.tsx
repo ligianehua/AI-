@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getToken } from "@/lib/auth";
+import { formatDate } from "@/lib/datetime";
 import { api } from "@/lib/api/client";
 import { useMe } from "@/lib/hooks/use-me";
 
@@ -103,7 +104,7 @@ export function KnowledgePanel() {
               <Badge variant={status.variant}>{status.label}</Badge>
               <span className="text-xs text-muted-foreground">{doc.chunk_count} 块</span>
               <span className="ml-auto text-xs text-muted-foreground">
-                {new Date(doc.created_at).toLocaleDateString("zh-CN")}
+                {formatDate(doc.created_at)}
               </span>
               {canManage && (
                 <Button

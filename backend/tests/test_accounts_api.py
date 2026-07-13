@@ -69,6 +69,12 @@ async def test_account_crud_and_rbac(
     assert resp.status_code == 200
     assert resp.json()["size"] == "201-500人"
 
+    # 显式 null 击穿非空列 → 422 而非 500（回归 DATA-04）
+    resp = await client.patch(
+        f"/api/v1/accounts/{account_id}", json={"name": None}, headers=headers_a
+    )
+    assert resp.status_code == 422
+
 
 async def test_contact_crud_scoped_by_account(
     client: AsyncClient, session: AsyncSession, roles: RoleUsers, login: LoginFn

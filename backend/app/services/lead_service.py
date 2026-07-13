@@ -210,8 +210,14 @@ async def trigger_rescore(session: AsyncSession, actor: User, lead_id: uuid.UUID
 async def convert_lead(
     session: AsyncSession, actor: User, lead_id: uuid.UUID, payload: ConvertRequest
 ) -> ConvertResult:
-    """转化：一个事务里创建 account + contact + opportunity 并回链线索，失败整体回滚。"""
+    """转化：一个事务里创建 account + contact + opportunity 并回链线索，失败整体回滚。
+
+    行锁防并发双击：两请求同时转化同一线索时，后到者在锁释放后看到 converted 状态被 409。
+    """
     lead = await lead_service.get(session, actor, lead_id)
+    # 对已通过可见域校验的行加锁并重读状态
+    lead = await session.scalar(select(Lead).where(Lead.id == lead.id).with_for_update())  # type: ignore[assignment]
+    assert lead is not None
     if lead.status == LeadStatus.CONVERTED:
         raise ConflictError("该线索已转化")
     if lead.status == LeadStatus.INVALID:
@@ -226,7 +232,7 @@ async def convert_lead(
     await session.flush()
 
     contact: Contact | None = None
-    if lead.contact_name or lead.contact_phone:
+    if lead.contact_name or lead.contact_phone or lead.contact_wechat:
         contact = Contact(
             account_id=account.id,
             name=lead.contact_name or "未知联系人",
@@ -276,7 +282,8 @@ async def assign_leads(
     )
     if target is None:
         raise DomainError("目标负责人不存在或已停用")
-    if actor.role == Role.MANAGER and target.team_id != actor.team_id:
+    if actor.role == Role.MANAGER and (actor.team_id is None or target.team_id != actor.team_id):
+        # 无团队 manager 不能对外分配；None == None 不构成"同团队"
         raise DomainError("只能分配给本团队成员")
 
     leads = list(await session.scalars(lead_service.base_query(actor).where(Lead.id.in_(lead_ids))))
@@ -394,18 +401,24 @@ async def import_leads(session: AsyncSession, actor: User, file: BinaryIO) -> Le
                 )
             )
         )
-    duplicate_warnings = [
-        ImportRowError(
-            row=row_no,
-            reason=(
-                f"疑似撞单：手机号 {p.contact_phone} 已存在"
-                if p.contact_phone in existing_phones
-                else f"疑似撞单：公司「{p.account_name}」已存在"
-            ),
-        )
-        for row_no, p in parsed
-        if p.contact_phone in existing_phones or p.account_name in existing_names
-    ]
+    duplicate_warnings: list[ImportRowError] = []
+    seen_phones: set[str] = set()
+    seen_names: set[str] = set()
+    for row_no, p in parsed:
+        # 与库内已有数据撞单，或与本文件前面的行撞单，都要提示（不拦截）
+        if p.contact_phone and (
+            p.contact_phone in existing_phones or p.contact_phone in seen_phones
+        ):
+            duplicate_warnings.append(
+                ImportRowError(row=row_no, reason=f"疑似撞单：手机号 {p.contact_phone} 已存在")
+            )
+        elif p.account_name in existing_names or p.account_name in seen_names:
+            duplicate_warnings.append(
+                ImportRowError(row=row_no, reason=f"疑似撞单：公司「{p.account_name}」已存在")
+            )
+        if p.contact_phone:
+            seen_phones.add(p.contact_phone)
+        seen_names.add(p.account_name)
 
     leads = [Lead(**p.model_dump(), owner_id=actor.id, status=LeadStatus.NEW) for _, p in parsed]
     session.add_all(leads)

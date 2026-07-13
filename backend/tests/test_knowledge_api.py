@@ -24,8 +24,9 @@ LoginFn = Callable[[str], Awaitable[dict[str, str]]]
 def enqueued(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, tuple[Any, ...]]]:
     calls: list[tuple[str, tuple[Any, ...]]] = []
 
-    async def fake_enqueue(task_name: str, *args: Any) -> None:
+    async def fake_enqueue(task_name: str, *args: Any) -> bool:
         calls.append((task_name, args))
+        return True
 
     monkeypatch.setattr(dispatcher, "enqueue", fake_enqueue)
     return calls

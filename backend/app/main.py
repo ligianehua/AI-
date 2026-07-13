@@ -35,9 +35,14 @@ def create_app() -> FastAPI:
     async def validation_error_handler(
         _request: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        # 只保留可序列化字段：errors() 的 ctx 可能携带异常对象，直接 json 化会 500
+        detail = [
+            {"loc": list(e.get("loc", [])), "msg": e.get("msg"), "type": e.get("type")}
+            for e in exc.errors()
+        ]
         return JSONResponse(
             status_code=422,
-            content={"code": "validation_error", "message": "参数校验失败", "detail": exc.errors()},
+            content={"code": "validation_error", "message": "参数校验失败", "detail": detail},
         )
 
     @app.get("/health", tags=["infra"], summary="健康检查")

@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime } from "@/lib/datetime";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -82,7 +84,7 @@ export function ScoreDetailDialog({
             </section>
             {detail.scored_at && (
               <p className="text-xs text-muted-foreground">
-                评分时间：{new Date(detail.scored_at).toLocaleString("zh-CN")}
+                评分时间：{formatDateTime(detail.scored_at)}
               </p>
             )}
           </div>

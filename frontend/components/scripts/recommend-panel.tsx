@@ -98,9 +98,13 @@ export function RecommendPanel() {
     toast.success(value === 1 ? "感谢反馈 👍" : "已记录，我们会改进 👌");
   }
 
-  function copyText(content: string) {
-    navigator.clipboard.writeText(content.trim());
-    toast.success("已复制到剪贴板");
+  async function copyText(content: string) {
+    try {
+      await navigator.clipboard.writeText(content.trim());
+      toast.success("已复制到剪贴板");
+    } catch {
+      toast.error("复制失败（浏览器限制），请手动选中复制");
+    }
   }
 
   const candidates = text

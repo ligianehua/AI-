@@ -46,10 +46,12 @@ def _rrf_merge(rankings: list[list[uuid.UUID]]) -> dict[uuid.UUID, float]:
     return scores
 
 
-async def _embed_query(query: str, llm: LLMClient) -> list[float] | None:
-    """查询向量化；嵌入服务不可用时返回 None（降级纯关键词路）。"""
+async def _embed_query(
+    query: str, llm: LLMClient, user_id: uuid.UUID | None = None
+) -> list[float] | None:
+    """查询向量化（记账到发起用户，纳入日限额）；嵌入服务不可用时返回 None（降级纯关键词路）。"""
     try:
-        vectors = await llm.embed([query])
+        vectors = await llm.embed([query], user_id=user_id)
         return vectors[0]
     except DomainError as exc:
         logger.warning("查询嵌入失败（%s），降级为纯关键词检索", exc.message)
@@ -91,6 +93,7 @@ async def search_scripts(
     category: str | None = None,
     top_k: int = 5,
     llm: LLMClient | None = None,
+    user_id: uuid.UUID | None = None,
 ) -> list[ScriptHit]:
     llm = llm or get_llm_client()
     base_filter: list[ColumnElement[bool]] = [
@@ -102,7 +105,7 @@ async def search_scripts(
 
     rankings: list[list[uuid.UUID]] = []
 
-    query_vec = await _embed_query(query, llm)
+    query_vec = await _embed_query(query, llm, user_id=user_id)
     if query_vec is not None:
         vec_stmt = (
             select(Script.id)
@@ -139,12 +142,22 @@ async def search_knowledge(
     *,
     top_k: int = 3,
     llm: LLMClient | None = None,
+    user_id: uuid.UUID | None = None,
 ) -> list[KnowledgeHit]:
     llm = llm or get_llm_client()
-    base_filter = [KnowledgeChunk.deleted_at.is_(None)]
+    # chunk 未删 + 所属文档未删且已就绪（防止已删/失败文档的残留 chunk 进入推荐）
+    ready_doc_ids = (
+        select(KnowledgeDoc.id)
+        .where(KnowledgeDoc.deleted_at.is_(None), KnowledgeDoc.status == "ready")
+        .scalar_subquery()
+    )
+    base_filter: list[ColumnElement[bool]] = [
+        KnowledgeChunk.deleted_at.is_(None),
+        KnowledgeChunk.doc_id.in_(ready_doc_ids),
+    ]
 
     rankings: list[list[uuid.UUID]] = []
-    query_vec = await _embed_query(query, llm)
+    query_vec = await _embed_query(query, llm, user_id=user_id)
     if query_vec is not None:
         vec_stmt = (
             select(KnowledgeChunk.id)

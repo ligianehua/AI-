@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -18,6 +19,7 @@ import { setToken } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,7 @@ export default function LoginPage() {
         return;
       }
       setToken(data.access_token);
+      queryClient.clear(); // 换号登录时清掉上一账号缓存
       router.push("/dashboard");
     } catch {
       setError("无法连接服务器，请稍后重试");

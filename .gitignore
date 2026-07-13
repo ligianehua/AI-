@@ -10,8 +10,8 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
-# 上传文件
-data/uploads/
+# 上传文件（任意层级，backend/data/uploads 等）
+**/data/uploads/
 
 # 日志
 *.log

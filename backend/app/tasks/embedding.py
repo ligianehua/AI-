@@ -4,7 +4,7 @@ import logging
 import uuid
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.ai.client import get_llm_client
 from app.core.exceptions import DomainError
@@ -37,9 +37,15 @@ async def embed_script_task(ctx: dict[str, Any], script_id: str) -> None:
 async def embed_knowledge_doc_task(ctx: dict[str, Any], doc_id: str) -> None:
     llm = ctx.get("llm") or get_llm_client()
     async with ctx["sessionmaker"]() as session:
-        doc = await session.scalar(select(KnowledgeDoc).where(KnowledgeDoc.id == uuid.UUID(doc_id)))
+        doc = await session.scalar(
+            select(KnowledgeDoc).where(
+                KnowledgeDoc.id == uuid.UUID(doc_id), KnowledgeDoc.deleted_at.is_(None)
+            )
+        )
         if doc is None:
-            return
+            return  # 已删除的文档不处理，防止任务完成后"复活"软删文档
+        # 幂等：任务重试/重复投递时先清掉已有 chunks，避免重复累积
+        await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.doc_id == doc.id))
         path = knowledge_service.doc_file_path(doc.id)
         if path is None:
             doc.status = KnowledgeDocStatus.FAILED

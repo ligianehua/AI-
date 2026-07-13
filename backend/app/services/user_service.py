@@ -33,12 +33,19 @@ async def _ensure_team_exists(session: AsyncSession, team_id: uuid.UUID | None) 
 
 
 async def list_assignable_users(session: AsyncSession, actor: User) -> list[User]:
-    """可分配对象：manager=本团队成员，admin=全部在职用户；sales 禁止。"""
+    """可分配对象：manager=本团队成员，admin=全部在职用户；sales 禁止。
+
+    无团队的 manager 只能看到自己——`team_id == None` 会被编译成 IS NULL，
+    否则将枚举出所有无团队用户（越权）。
+    """
     if actor.role == Role.SALES:
         raise PermissionDeniedError("销售不能分配线索")
     stmt = select(User).where(User.deleted_at.is_(None), User.is_active)
     if actor.role == Role.MANAGER:
-        stmt = stmt.where(User.team_id == actor.team_id)
+        if actor.team_id is None:
+            stmt = stmt.where(User.id == actor.id)
+        else:
+            stmt = stmt.where(User.team_id == actor.team_id)
     return list(await session.scalars(stmt.order_by(User.name.asc())))
 
 

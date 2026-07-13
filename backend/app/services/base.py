@@ -24,9 +24,8 @@ def visibility_scope[M: AppModel](
         return stmt
     owner_col: InstrumentedAttribute[uuid.UUID] = getattr(model, owner_field)
     if actor.role == Role.MANAGER and actor.team_id is not None:
-        team_members = select(User.id).where(
-            User.team_id == actor.team_id, User.deleted_at.is_(None)
-        )
+        # 不排除已软删用户：离职销售名下的客户/商机必须保留在团队视图中
+        team_members = select(User.id).where(User.team_id == actor.team_id)
         return stmt.where(owner_col.in_(team_members))
     return stmt.where(owner_col == actor.id)
 

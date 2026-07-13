@@ -35,7 +35,8 @@ class WorkerSettings:
         embed_script_task,
         embed_knowledge_doc_task,
     ]
-    cron_jobs = [cron(risk_scan_task, hour=8, minute=0)]
+    # ARQ cron 按 UTC 计时：默认 hour=0 即北京时间 08:00（RISK_SCAN_HOUR_UTC 可调）
+    cron_jobs = [cron(risk_scan_task, hour=get_settings().risk_scan_hour_utc, minute=0)]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

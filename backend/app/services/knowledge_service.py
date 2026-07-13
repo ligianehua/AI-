@@ -44,7 +44,11 @@ async def upload_doc(
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     (UPLOAD_DIR / f"{doc.id}{suffix}").write_bytes(content)
 
-    await dispatcher.enqueue("embed_knowledge_doc_task", str(doc.id))
+    enqueued = await dispatcher.enqueue("embed_knowledge_doc_task", str(doc.id))
+    if not enqueued:
+        # 入队失败则立即标记 failed，避免文档永远停留在 processing
+        doc.status = KnowledgeDocStatus.FAILED
+        await session.commit()
     return doc
 
 

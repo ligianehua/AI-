@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { data: me } = useMe();
   const navItems = [
     ...NAV_ITEMS,
@@ -35,6 +37,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   function handleLogout() {
     clearToken();
+    queryClient.clear(); // 清空上一账号的所有业务缓存，防止换号后泄漏
     router.replace("/login");
   }
 

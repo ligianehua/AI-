@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.models.enums import Role
+from app.schemas.common import forbid_explicit_null
 
 
 class UserCreate(BaseModel):
@@ -15,6 +16,8 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    _no_null = forbid_explicit_null("name", "role", "is_active")
+
     name: str | None = Field(default=None, min_length=1, max_length=50)
     password: str | None = Field(default=None, min_length=8, max_length=128)
     role: Role | None = None

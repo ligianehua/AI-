@@ -14,6 +14,7 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.timezone import biz_today
 from app.models.activity import Activity
 from app.models.enums import ActivityRelatedType, NotificationType, OpportunityStage
 from app.models.notification import Notification
@@ -105,8 +106,8 @@ async def scan_risks(session: AsyncSession, now: datetime | None = None) -> int:
             )
             created += 1
 
-    # next_action 到期未处理（近 7 天窗口，避免历史数据轰炸）
-    today = now.date()
+    # next_action 到期未处理（近 7 天窗口，避免历史数据轰炸；Asia/Shanghai 日界）
+    today = biz_today(now)
     due_activities = list(
         await session.scalars(
             select(Activity).where(
@@ -119,6 +120,7 @@ async def scan_risks(session: AsyncSession, now: datetime | None = None) -> int:
         )
     )
     for activity in due_activities:
+        # 去重键与写入键必须一致（按 activity 粒度），否则未读去重失效导致每日重复提醒
         if await _has_unread(
             session, activity.owner_id, NotificationType.NEXT_ACTION_DUE, "activity", activity.id
         ):
@@ -129,8 +131,8 @@ async def scan_risks(session: AsyncSession, now: datetime | None = None) -> int:
                 type=NotificationType.NEXT_ACTION_DUE,
                 title=f"下一步行动到期：{activity.next_action}",
                 body=f"计划日期 {activity.next_action_date}，请确认是否已完成。",
-                related_type=activity.related_type,
-                related_id=activity.related_id,
+                related_type="activity",
+                related_id=activity.id,
             )
         )
         created += 1

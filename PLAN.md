@@ -41,12 +41,13 @@
 3. **商机跟进**：阶段看板、跟进记录、AI 下一步建议、风险提醒
 4. **话术推荐**：话术库管理 + RAG 检索 + 基于客户上下文的实时生成
 
-### P1 — 第二阶段（M8–M11）
+### P1 — 第二阶段（M8–M12）
 
-5. **通用 AI 助手**：对话式查数（function calling 只读工具）。放 P1 的理由：它消费 P0 全部数据与工具，P0 没跑通它就是空壳
-6. **合同处理**：模板生成、要素抽取、风险条款审查
-7. **销售预测**：加权 pipeline 预测 + 趋势外推（标注置信度）
-8. **业绩分析**：团队/个人仪表盘 + AI 归因解读
+5. **线索发现（东南亚）**（M8，已启动）：客户自选国家+城市+品类，系统调 Google Places API 拉取商户进候选池，销售领取转正式线索。详见 §6.6
+6. **通用 AI 助手**（M9）：对话式查数（function calling 只读工具）。放 P1 的理由：它消费 P0 全部数据与工具，P0 没跑通它就是空壳
+7. **合同处理**（M10）：模板生成、要素抽取、风险条款审查
+8. **销售预测**（M11）：加权 pipeline 预测 + 趋势外推（标注置信度）
+9. **业绩分析**（M12）：团队/个人仪表盘 + AI 归因解读
 
 ### P2 — 明确不做（现在）
 
@@ -159,7 +160,25 @@ notifications  # 风险提醒（与 §6.3 三种风险一一对应）
   title, body, related_type, related_id, read_at
 ```
 
-P1 增表：`contracts`（合同 + 抽取要素 jsonb + 审查结果 jsonb）、`forecast_snapshots`（周度 pipeline 快照，预测的原料）。
+P1 增表（M8 线索发现，已定稿）：
+
+```
+discovery_subscriptions   # 抓取订阅（客户自选目标市场）
+  id, name, country, city, category,   # 品类=Places 文本查询关键词（如 manufacturing / restaurant）
+  keyword null,                        # 补充关键词
+  is_active bool, owner_id,
+  last_run_at, last_run_new int null   # 最近一次抓取时间/新增候选数
+
+discovery_candidates      # 候选池（不直接进 leads，避免污染线索）
+  id, subscription_id, place_id unique,   # Google Place ID，幂等去重键
+  name, address, phone, website,
+  country, city, category,                # 冗余自订阅，便于筛选
+  status(pending|claimed|ignored),
+  duplicate_hint null,                     # 与库内线索/客户疑似重复的提示
+  owner_id, claimed_lead_id null, raw jsonb
+```
+
+其余 P1 增表：`contracts`（合同 + 抽取要素 jsonb + 审查结果 jsonb）、`forecast_snapshots`（周度 pipeline 快照，预测的原料）。
 
 **权限规则（RBAC，在 service 层统一实施）**：sales 只能读写 `owner_id = 自己` 的数据；manager 可读全团队、可改分配；admin 全量 + 配置。
 
@@ -327,12 +346,46 @@ POST   /api/v1/knowledge/docs           知识库上传（txt/md/docx → 存本
 - 仪表盘：我的今日待办（next_action 到期）、风险提醒、漏斗概览、本月成交额（sales 看自己 / manager 看团队）——纯聚合查询，不过度设计
 - 管理页（admin）：用户/团队管理 UI（话术库/知识库管理 UI 已在 M6 交付）
 
-## 7. P1 模块简要规格（M8–M11，P0 验收后再细化）
+### 6.6 线索发现 — 东南亚（M8）
 
-- **M8 通用 AI 助手**：对话入口（SSE 流式），function calling 挂 4 个只读工具 `search_leads / search_opportunities / get_account_360 / recommend_scripts`，能回答"我手上哪个商机风险最大？"。权限继承当前用户；`routing` 追加 chat 档位、`llm_calls.task_type` 追加 chat。
-- **M9 合同处理**：docx 模板变量填充生成；上传合同 → LLM 抽取要素（甲乙方/金额/期限/付款节点）→ 风险条款清单比对审查。输出永远是"提示"不是"结论"，UI 注明不构成法律意见。
-- **M10 销售预测**：加权 pipeline（Σ 金额 × 阶段概率）+ 按 `forecast_snapshots` 周度快照做趋势外推。数据 < 2 个完整季度时只展示加权 pipeline，不做时序预测——没有数据的预测是玄学，UI 必须展示置信区间和数据量提示。
-- **M11 业绩分析**：团队/个人维度（成交额、转化率、周期、活动量），LLM 读聚合数据生成月度归因解读（"转化率下降主因是 proposal→negotiation 停滞"）。
+**用户故事**：销售/主管配置"印尼 雅加达 制造业"这样的订阅，点一下抓取，候选池里出现真实商户（名称/地址/电话/网站），逐条"领取"变成正式线索并自动 AI 评分。
+
+**数据源决策**：Google Places API (New) Text Search（密钥 `GOOGLE_MAPS_API_KEY`，只走 .env）。不自建爬虫：合规（各国 PDPA）与数据质量都不可控；Places 是合法可用的商户数据，且天然支持"品类 + 城市"筛选。后续可扩 Apollo.io / 邓白氏，provider 接口预留。
+
+API：
+```
+POST   /api/v1/discovery/subscriptions            创建订阅（country/city/category/keyword）
+GET    /api/v1/discovery/subscriptions            列表（分页，RBAC）
+PATCH  /api/v1/discovery/subscriptions/{id}       启停/修改
+DELETE /api/v1/discovery/subscriptions/{id}       软删
+POST   /api/v1/discovery/subscriptions/{id}/run   手动抓取（异步任务，202）
+GET    /api/v1/discovery/candidates?status=&subscription_id=   候选池（分页）
+POST   /api/v1/discovery/candidates/{id}/claim    领取 → 事务创建线索（source=discovery）+ 自动评分
+POST   /api/v1/discovery/candidates/{id}/ignore   忽略
+```
+
+**抓取管线**：`textQuery = "{category} in {city}, {country}"` → Places searchText（FieldMask 限定 id/名称/地址/电话/网站/类型，单页 ≤20 条）→ `place_id` 幂等去重（已存在跳过）→ 与库内 leads/accounts 按电话/名称查重（只标 `duplicate_hint` 不拦截）→ 入候选池 → 更新订阅 `last_run_at/last_run_new`。
+
+**约束**：
+- 候选与订阅同 owner，RBAC 与线索一致（sales own / manager team / admin all）
+- Key 未配置或 Places 报错 → 领域错误中文提示，不得 500
+- 领取是事务：candidate 置 claimed + 创建 lead + 触发评分，重复领取被拦
+- MVP 手动触发抓取；定时订阅抓取待 ARQ cron 扩展（与风险扫描同机制）
+
+验收标准：
+- [ ] 订阅 CRUD + 三角色 RBAC 测试（跨 owner 404）
+- [ ] 同一订阅跑两次，place_id 不重复入池（幂等）
+- [ ] 库内已有同电话线索时，候选带撞单提示
+- [ ] 领取后线索出现在线索列表且自动评分（source=discovery）
+- [ ] key 缺失时 run 返回可读中文错误
+- [ ] 迁移可升可降；make lint && make test 全绿
+
+## 7. P1 模块简要规格（M9–M12，逐个启动前再细化）
+
+- **M9 通用 AI 助手**：对话入口（SSE 流式），function calling 挂 4 个只读工具 `search_leads / search_opportunities / get_account_360 / recommend_scripts`，能回答"我手上哪个商机风险最大？"。权限继承当前用户；`routing` 追加 chat 档位、`llm_calls.task_type` 追加 chat。
+- **M10 合同处理**：docx 模板变量填充生成；上传合同 → LLM 抽取要素（甲乙方/金额/期限/付款节点）→ 风险条款清单比对审查。输出永远是"提示"不是"结论"，UI 注明不构成法律意见。
+- **M11 销售预测**：加权 pipeline（Σ 金额 × 阶段概率）+ 按 `forecast_snapshots` 周度快照做趋势外推。数据 < 2 个完整季度时只展示加权 pipeline，不做时序预测——没有数据的预测是玄学，UI 必须展示置信区间和数据量提示。
+- **M12 业绩分析**：团队/个人维度（成交额、转化率、周期、活动量），LLM 读聚合数据生成月度归因解读（"转化率下降主因是 proposal→negotiation 停滞"）。
 
 ## 8. 里程碑与执行顺序
 
@@ -348,7 +401,8 @@ POST   /api/v1/knowledge/docs           知识库上传（txt/md/docx → 存本
 | M5 | 商机跟进 | §6.3 看板 + 跟进 + AI 建议 + 定时风险提醒 | §6.3 验收清单全过 |
 | M6 | 话术推荐 | §6.4 话术库 + RAG + 生成 + 知识库上传 | §6.4 验收清单全过 + 检索质量抽查（top-5 命中人工评 ≥80%） |
 | M7 | 打磨收尾 | 仪表盘、admin 用户管理页、E2E（Playwright 冒烟 5 条主流程）、部署文档 README + 生产初始化 admin 脚本 | 全量测试绿；docker compose prod 模式可部署；演示脚本可走通 |
-| M8–M11 | P1 | AI 助手 / 合同 / 预测 / 业绩 | P0 上线且积累数据后启动 |
+| M8 | 线索发现（东南亚） | §6.6 前后端：订阅管理 + Places 抓取任务 + 候选池 + 领取转线索 | §6.6 验收清单全过 |
+| M9–M12 | P1 | AI 助手 / 合同 / 预测 / 业绩 | P0 上线且积累数据后启动 |
 
 ## 9. 目录结构
 

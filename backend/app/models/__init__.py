@@ -4,6 +4,8 @@ from app.models.account import Account
 from app.models.activity import Activity
 from app.models.base import AppModel, Base
 from app.models.contact import Contact
+from app.models.discovery_candidate import DiscoveryCandidate
+from app.models.discovery_subscription import DiscoverySubscription
 from app.models.knowledge_chunk import KnowledgeChunk
 from app.models.knowledge_doc import KnowledgeDoc
 from app.models.lead import Lead
@@ -20,6 +22,8 @@ __all__ = [
     "AppModel",
     "Base",
     "Contact",
+    "DiscoveryCandidate",
+    "DiscoverySubscription",
     "KnowledgeChunk",
     "KnowledgeDoc",
     "Lead",

@@ -27,6 +27,7 @@ async def _get_pool() -> ArqRedis:
 
 
 def _task_registry() -> dict[str, Any]:
+    from app.tasks.discovery import run_discovery_task
     from app.tasks.embedding import embed_knowledge_doc_task, embed_script_task
     from app.tasks.profile import account_profile_task
     from app.tasks.risk_scan import risk_scan_task
@@ -38,6 +39,7 @@ def _task_registry() -> dict[str, Any]:
         "risk_scan_task": risk_scan_task,
         "embed_script_task": embed_script_task,
         "embed_knowledge_doc_task": embed_knowledge_doc_task,
+        "run_discovery_task": run_discovery_task,
     }
 
 

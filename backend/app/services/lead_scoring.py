@@ -34,6 +34,7 @@ SOURCE_LABELS = {
     LeadSource.REFERRAL: "转介绍",
     LeadSource.ADS: "广告",
     LeadSource.COLD_CALL: "陌拜",
+    LeadSource.DISCOVERY: "线索发现",
     LeadSource.OTHER: "其他",
 }
 ACTIVITY_TYPE_LABELS = {

@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # 风险扫描 cron 小时（UTC）。0 = 北京时间 08:00（ARQ cron 按 UTC 计）
     risk_scan_hour_utc: int = 0
 
+    # M8 线索发现：Google Places API (New)，空 = 功能不可用（接口返回可读错误）
+    google_maps_api_key: str = ""
+
     @model_validator(mode="after")
     def _forbid_default_secret_in_prod(self) -> "Settings":
         # 生产环境禁止使用仓库公开的默认密钥（否则任何人可伪造 JWT）

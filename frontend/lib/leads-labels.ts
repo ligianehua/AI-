@@ -9,6 +9,7 @@ export const SOURCE_LABELS: Record<LeadSource, string> = {
   referral: "转介绍",
   ads: "广告",
   cold_call: "陌拜",
+  discovery: "线索发现",
   other: "其他",
 };
 

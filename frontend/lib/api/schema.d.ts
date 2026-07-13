@@ -718,6 +718,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/discovery/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 订阅列表（RBAC） */
+        get: operations["list_subscriptions_api_v1_discovery_subscriptions_get"];
+        put?: never;
+        /** 创建抓取订阅 */
+        post: operations["create_subscription_api_v1_discovery_subscriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discovery/subscriptions/{sub_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除订阅（软删） */
+        delete: operations["delete_subscription_api_v1_discovery_subscriptions__sub_id__delete"];
+        options?: never;
+        head?: never;
+        /** 更新订阅（启停/改条件） */
+        patch: operations["update_subscription_api_v1_discovery_subscriptions__sub_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/discovery/subscriptions/{sub_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 手动抓取（异步） */
+        post: operations["run_subscription_api_v1_discovery_subscriptions__sub_id__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discovery/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 候选池列表（RBAC） */
+        get: operations["list_candidates_api_v1_discovery_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discovery/candidates/{candidate_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 领取 → 创建线索并自动评分 */
+        post: operations["claim_candidate_api_v1_discovery_candidates__candidate_id__claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discovery/candidates/{candidate_id}/ignore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 忽略候选 */
+        post: operations["ignore_candidate_api_v1_discovery_candidates__candidate_id__ignore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -936,6 +1040,58 @@ export interface components {
         Body_upload_doc_api_v1_knowledge_docs_post: {
             /** File */
             file: string;
+        };
+        /** CandidateOut */
+        CandidateOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Subscription Id
+             * Format: uuid
+             */
+            subscription_id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Website */
+            website: string | null;
+            /** Country */
+            country: string;
+            /** City */
+            city: string;
+            /** Category */
+            category: string;
+            status: components["schemas"]["CandidateStatus"];
+            /** Duplicate Hint */
+            duplicate_hint: string | null;
+            /** Claimed Lead Id */
+            claimed_lead_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * CandidateStatus
+         * @enum {string}
+         */
+        CandidateStatus: "pending" | "claimed" | "ignored";
+        /** ClaimResult */
+        ClaimResult: {
+            /**
+             * Lead Id
+             * Format: uuid
+             */
+            lead_id: string;
+            /** Duplicate Warnings */
+            duplicate_warnings: components["schemas"]["DuplicateWarning"][];
         };
         /** ContactCreate */
         ContactCreate: {
@@ -1279,7 +1435,7 @@ export interface components {
          * LeadSource
          * @enum {string}
          */
-        LeadSource: "website" | "exhibition" | "referral" | "ads" | "cold_call" | "other";
+        LeadSource: "website" | "exhibition" | "referral" | "ads" | "cold_call" | "discovery" | "other";
         /**
          * LeadStatus
          * @enum {string}
@@ -1446,6 +1602,17 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
+        /** PageResult[CandidateOut] */
+        PageResult_CandidateOut_: {
+            /** Items */
+            items: components["schemas"]["CandidateOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /** PageResult[KnowledgeDocOut] */
         PageResult_KnowledgeDocOut_: {
             /** Items */
@@ -1483,6 +1650,17 @@ export interface components {
         PageResult_ScriptOut_: {
             /** Items */
             items: components["schemas"]["ScriptOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** PageResult[SubscriptionOut] */
+        PageResult_SubscriptionOut_: {
+            /** Items */
+            items: components["schemas"]["SubscriptionOut"][];
             /** Total */
             total: number;
             /** Page */
@@ -1548,6 +1726,13 @@ export interface components {
          * @enum {string}
          */
         Role: "sales" | "manager" | "admin";
+        /** RunResult */
+        RunResult: {
+            /** Enqueued */
+            enqueued: boolean;
+            /** Message */
+            message: string;
+        };
         /**
          * ScriptCategory
          * @enum {string}
@@ -1628,6 +1813,71 @@ export interface components {
             lost_reason?: string | null;
             /** Amount */
             amount?: number | string | null;
+        };
+        /** SubscriptionCreate */
+        SubscriptionCreate: {
+            /**
+             * Name
+             * @description 留空自动取「城市 品类」
+             */
+            name?: string | null;
+            /** Country */
+            country: string;
+            /** City */
+            city: string;
+            /**
+             * Category
+             * @description 品类关键词，如 manufacturing
+             */
+            category: string;
+            /** Keyword */
+            keyword?: string | null;
+        };
+        /** SubscriptionOut */
+        SubscriptionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Country */
+            country: string;
+            /** City */
+            city: string;
+            /** Category */
+            category: string;
+            /** Keyword */
+            keyword: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Owner Name */
+            owner_name: string;
+            /** Last Run At */
+            last_run_at: string | null;
+            /** Last Run New */
+            last_run_new: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** SubscriptionUpdate */
+        SubscriptionUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Country */
+            country?: string | null;
+            /** City */
+            city?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Keyword */
+            keyword?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
         /** TeamCreate */
         TeamCreate: {
@@ -3569,6 +3819,262 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_subscriptions_api_v1_discovery_subscriptions_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_SubscriptionOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_subscription_api_v1_discovery_subscriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_subscription_api_v1_discovery_subscriptions__sub_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_subscription_api_v1_discovery_subscriptions__sub_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_subscription_api_v1_discovery_subscriptions__sub_id__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_candidates_api_v1_discovery_candidates_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["CandidateStatus"] | null;
+                subscription_id?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_CandidateOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_candidate_api_v1_discovery_candidates__candidate_id__claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ignore_candidate_api_v1_discovery_candidates__candidate_id__ignore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
             };
             /** @description Validation Error */
             422: {

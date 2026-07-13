@@ -6,11 +6,12 @@ completeness:            # 信息完整度
   requirement_desc: 12   # 需求描述长度 >= requirement_min_length 才计分
 requirement_min_length: 10
 
-source_weights:          # 来源权重：转介绍 > 展会 > 官网 > 广告 > 陌拜
+source_weights:          # 来源权重：转介绍 > 展会 > 官网 > 广告 > 线索发现 > 陌拜
   referral: 12
   exhibition: 8
   website: 5
   ads: 4
+  discovery: 3           # 地图商户抓取：有真实经营信息但无主动意向
   cold_call: 2
   other: 2
 

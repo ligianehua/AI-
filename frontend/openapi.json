@@ -2833,6 +2833,446 @@
           }
         }
       }
+    },
+    "/api/v1/discovery/subscriptions": {
+      "post": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "创建抓取订阅",
+        "operationId": "create_subscription_api_v1_discovery_subscriptions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "订阅列表（RBAC）",
+        "operationId": "list_subscriptions_api_v1_discovery_subscriptions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResult_SubscriptionOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/subscriptions/{sub_id}": {
+      "patch": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "更新订阅（启停/改条件）",
+        "operationId": "update_subscription_api_v1_discovery_subscriptions__sub_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sub Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "删除订阅（软删）",
+        "operationId": "delete_subscription_api_v1_discovery_subscriptions__sub_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sub Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/subscriptions/{sub_id}/run": {
+      "post": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "手动抓取（异步）",
+        "operationId": "run_subscription_api_v1_discovery_subscriptions__sub_id__run_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sub Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/candidates": {
+      "get": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "候选池列表（RBAC）",
+        "operationId": "list_candidates_api_v1_discovery_candidates_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CandidateStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "subscription_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subscription Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResult_CandidateOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/candidates/{candidate_id}/claim": {
+      "post": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "领取 → 创建线索并自动评分",
+        "operationId": "claim_candidate_api_v1_discovery_candidates__candidate_id__claim_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/candidates/{candidate_id}/ignore": {
+      "post": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "忽略候选",
+        "operationId": "ignore_candidate_api_v1_discovery_candidates__candidate_id__ignore_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3540,6 +3980,148 @@
           "file"
         ],
         "title": "Body_upload_doc_api_v1_knowledge_docs_post"
+      },
+      "CandidateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "subscription_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subscription Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CandidateStatus"
+          },
+          "duplicate_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Hint"
+          },
+          "claimed_lead_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed Lead Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "subscription_id",
+          "name",
+          "address",
+          "phone",
+          "website",
+          "country",
+          "city",
+          "category",
+          "status",
+          "duplicate_hint",
+          "claimed_lead_id",
+          "created_at"
+        ],
+        "title": "CandidateOut"
+      },
+      "CandidateStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "claimed",
+          "ignored"
+        ],
+        "title": "CandidateStatus"
+      },
+      "ClaimResult": {
+        "properties": {
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lead Id"
+          },
+          "duplicate_warnings": {
+            "items": {
+              "$ref": "#/components/schemas/DuplicateWarning"
+            },
+            "type": "array",
+            "title": "Duplicate Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lead_id",
+          "duplicate_warnings"
+        ],
+        "title": "ClaimResult"
       },
       "ContactCreate": {
         "properties": {
@@ -4640,6 +5222,7 @@
           "referral",
           "ads",
           "cold_call",
+          "discovery",
           "other"
         ],
         "title": "LeadSource"
@@ -5161,6 +5744,37 @@
         ],
         "title": "PageResult[AccountOut]"
       },
+      "PageResult_CandidateOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "PageResult[CandidateOut]"
+      },
       "PageResult_KnowledgeDocOut_": {
         "properties": {
           "items": {
@@ -5284,6 +5898,37 @@
           "page_size"
         ],
         "title": "PageResult[ScriptOut]"
+      },
+      "PageResult_SubscriptionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "PageResult[SubscriptionOut]"
       },
       "PageResult_TeamOut_": {
         "properties": {
@@ -5449,6 +6094,24 @@
           "admin"
         ],
         "title": "Role"
+      },
+      "RunResult": {
+        "properties": {
+          "enqueued": {
+            "type": "boolean",
+            "title": "Enqueued"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enqueued",
+          "message"
+        ],
+        "title": "RunResult"
       },
       "ScriptCategory": {
         "type": "string",
@@ -5710,6 +6373,228 @@
           "stage"
         ],
         "title": "StageChangeRequest"
+      },
+      "SubscriptionCreate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "留空自动取「城市 品类」"
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Country"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "City"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Category",
+            "description": "品类关键词，如 manufacturing"
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          }
+        },
+        "type": "object",
+        "required": [
+          "country",
+          "city",
+          "category"
+        ],
+        "title": "SubscriptionCreate"
+      },
+      "SubscriptionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "owner_name": {
+            "type": "string",
+            "title": "Owner Name"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "last_run_new": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run New"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "country",
+          "city",
+          "category",
+          "keyword",
+          "is_active",
+          "owner_name",
+          "last_run_at",
+          "last_run_new",
+          "created_at"
+        ],
+        "title": "SubscriptionOut"
+      },
+      "SubscriptionUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "SubscriptionUpdate"
       },
       "TeamCreate": {
         "properties": {

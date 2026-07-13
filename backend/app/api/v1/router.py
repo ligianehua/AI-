@@ -7,6 +7,7 @@ from app.api.v1 import (
     auth,
     contacts,
     dashboard,
+    discovery,
     knowledge,
     leads,
     notifications,
@@ -30,3 +31,4 @@ api_router.include_router(activities.router)
 api_router.include_router(notifications.router)
 api_router.include_router(scripts.router)
 api_router.include_router(knowledge.router)
+api_router.include_router(discovery.router)

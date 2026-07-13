@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "工作台" },
   { href: "/leads", label: "线索" },
+  { href: "/discovery", label: "线索发现" },
   { href: "/accounts", label: "客户" },
   { href: "/opportunities", label: "商机" },
   { href: "/scripts", label: "话术" },

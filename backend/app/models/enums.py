@@ -15,7 +15,14 @@ class LeadSource(StrEnum):
     REFERRAL = "referral"
     ADS = "ads"
     COLD_CALL = "cold_call"
+    DISCOVERY = "discovery"  # 线索发现（M8：Places 抓取候选池领取）
     OTHER = "other"
+
+
+class CandidateStatus(StrEnum):
+    PENDING = "pending"
+    CLAIMED = "claimed"
+    IGNORED = "ignored"
 
 
 class LeadStatus(StrEnum):

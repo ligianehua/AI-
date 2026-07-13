@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+﻿import { expect, test, type Page } from "@playwright/test";
 
 /** 5 条主流程冒烟（PLAN §8 M7）。依赖 seed 数据（make seed + seed_scripts）。 */
 
@@ -23,7 +23,7 @@ test("1. 登录后工作台显示统计与漏斗", async ({ page }) => {
 
 test("2. 新建线索后自动评分（异步 + 轮询刷新）", async ({ page }) => {
   await login(page, "sales1@example.com", "password123");
-  await page.getByRole("link", { name: "线索" }).click();
+  await page.getByRole("link", { name: "线索", exact: true }).click();
   await page.getByRole("button", { name: "新建线索" }).click();
   await page.fill("#account_name", `E2E测试公司${runId}`);
   await page.fill("#contact_name", "测试联系人");
@@ -35,7 +35,7 @@ test("2. 新建线索后自动评分（异步 + 轮询刷新）", async ({ page 
   await expect(page.getByText(/线索已创建|疑似撞单/)).toBeVisible();
   // 评分异步完成后（local 模式数秒内，LLM 无 key 时为规则分）出现在列表（轮询刷新）
   await page.getByRole("link", { name: "客户" }).click();
-  await page.getByRole("link", { name: "线索" }).click();
+  await page.getByRole("link", { name: "线索", exact: true }).click();
   await expect(async () => {
     // 直接查 API 更稳：分数已写入（前端轮询同源数据）
     const token = await page.evaluate(() => localStorage.getItem("access_token"));
@@ -54,7 +54,7 @@ test("2. 新建线索后自动评分（异步 + 轮询刷新）", async ({ page 
 
 test("3. 线索转化生成客户", async ({ page }) => {
   await login(page, "sales1@example.com", "password123");
-  await page.getByRole("link", { name: "线索" }).click();
+  await page.getByRole("link", { name: "线索", exact: true }).click();
   // 转化上一条用例创建的线索（按分排序可能在后页，逐页查找）
   const row = page.getByRole("row", { name: new RegExp(`E2E测试公司${runId}`) });
   await expect(page.getByRole("table")).toBeVisible();

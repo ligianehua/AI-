@@ -36,6 +36,7 @@ os.environ["DASHSCOPE_API_KEY"] = "unit-test-key"
 
 _TABLES = (
     "notifications, llm_calls, knowledge_chunks, knowledge_docs, scripts, "
+    "discovery_candidates, discovery_subscriptions, "
     "activities, leads, contacts, opportunities, accounts, users, teams"
 )
 

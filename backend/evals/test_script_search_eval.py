@@ -25,34 +25,48 @@ def eval_llm() -> LLMClient:
     return LLMClient()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def seeded_scripts(
-    session: AsyncSession, require_llm_keys: None, eval_llm: LLMClient
+    engine: Any, require_llm_keys: None, eval_llm: LLMClient
 ) -> dict[str, str]:
-    """12 条示例话术 + 真实嵌入。返回 scenario -> content 映射。"""
-    admin = User(
-        name="评测管理员",
-        email="eval_admin@test.cn",
-        hashed_password=hash_password("password123"),
-        role="admin",
-    )
-    session.add(admin)
-    await session.flush()
+    """12 条示例话术 + 真实嵌入，整个评测会话只播种一次（幂等：重复运行先清旧数据）。
 
-    contents = [content for _, _, content, _ in SAMPLES]
-    vectors = await eval_llm.embed(contents)
-    for (category, scenario, content, tags), vector in zip(SAMPLES, vectors, strict=True):
-        session.add(
-            Script(
-                category=category,
-                scenario=scenario,
-                content=content,
-                tags=tags,
-                created_by=admin.id,
-                embedding=vector,
+    返回 scenario -> content 映射。
+    """
+    from sqlalchemy import delete, select
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    # 与生产索引文本一致（embed_script_task）：标题+正文
+    contents = [f"{scenario}\n{content}" for _, scenario, content, _ in SAMPLES]
+    try:
+        vectors = await eval_llm.embed(contents)
+    except Exception as exc:  # 嵌入档位不可用 → 整组跳过
+        pytest.skip(f"嵌入不可用，检索质量 eval 跳过：{exc}")
+
+    async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+        await session.execute(delete(Script))
+        admin = await session.scalar(select(User).where(User.email == "eval_admin@test.cn"))
+        if admin is None:
+            admin = User(
+                name="评测管理员",
+                email="eval_admin@test.cn",
+                hashed_password=hash_password("password123"),
+                role="admin",
             )
-        )
-    await session.commit()
+            session.add(admin)
+            await session.flush()
+        for (category, scenario, content, tags), vector in zip(SAMPLES, vectors, strict=True):
+            session.add(
+                Script(
+                    category=category,
+                    scenario=scenario,
+                    content=content,
+                    tags=tags,
+                    created_by=admin.id,
+                    embedding=vector,
+                )
+            )
+        await session.commit()
     return {scenario: content for _, scenario, content, _ in SAMPLES}
 
 

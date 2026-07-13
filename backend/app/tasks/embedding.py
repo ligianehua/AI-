@@ -26,7 +26,8 @@ async def embed_script_task(ctx: dict[str, Any], script_id: str) -> None:
         if script is None:
             return
         try:
-            vectors = await llm.embed([script.content])
+            # 标题+正文一起嵌入：场景标题是话术的语义浓缩（如「决策拖延」），只嵌正文会丢关键语义
+            vectors = await llm.embed([f"{script.scenario}\n{script.content}"])
         except DomainError as exc:
             logger.warning("话术 %s 嵌入失败：%s（检索将走关键词路）", script_id, exc.message)
             return

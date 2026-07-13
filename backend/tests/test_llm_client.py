@@ -219,6 +219,39 @@ async def test_embed_routes_to_provider_with_embedding_tier(
     assert rows[0].task_type == "embedding"
 
 
+async def test_embed_splits_batches_over_limit(
+    llm: LLMClient, fakes: dict[str, FakeOpenAI], session: AsyncSession
+) -> None:
+    """DashScope 系单请求最多 10 条：12 条应拆成 10+2 两次请求，结果顺序拼接。"""
+    fakes["qwen"].embeddings.responses = [
+        embedding_response([[float(i)] * 4 for i in range(10)], tokens_in=30),
+        embedding_response([[10.0] * 4, [11.0] * 4], tokens_in=6),
+    ]
+    vectors = await llm.embed([f"文本{i}" for i in range(12)])
+    assert len(vectors) == 12
+    assert vectors[0] == [0.0] * 4
+    assert vectors[11] == [11.0] * 4
+    assert [len(c["input"]) for c in fakes["qwen"].embeddings.calls] == [10, 2]
+
+    rows = await _llm_call_rows(session)
+    assert len(rows) == 1  # 一次 embed() 记一行账，token 合计
+    assert rows[0].tokens_in == 36
+
+
+async def test_embed_retries_transient_failure_once(
+    llm: LLMClient, fakes: dict[str, FakeOpenAI], session: AsyncSession
+) -> None:
+    """嵌入无降级路：5xx 等瞬时错误原地重试一次；重试成功不影响结果。"""
+    err = openai.InternalServerError("boom", response=httpx.Response(500, request=REQ), body=None)
+    fakes["qwen"].embeddings.responses = [err, embedding_response([[0.1] * 4])]
+    vectors = await llm.embed(["文本"])
+    assert len(vectors) == 1
+    assert len(fakes["qwen"].embeddings.calls) == 2
+
+    rows = await _llm_call_rows(session)
+    assert [r.status for r in rows] == ["ok"]
+
+
 def test_switch_provider_only_needs_config_change() -> None:
     """DoD：切换 provider 只改配置，代码零改动。"""
     base = {

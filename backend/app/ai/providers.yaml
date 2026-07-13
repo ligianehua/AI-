@@ -3,6 +3,14 @@
 # 注意：模型名以接入时官方文档为准（PLAN.md 尾注），填好 API key 后先跑 POST /api/v1/ai/ping 冒烟。
 
 providers:
+  silra:
+    # OpenAI 兼容聚合网关（用户自选服务商），模型名与官方一致
+    base_url: https://api.silra.cn/v1
+    api_key_env: SILRA_API_KEY
+    models:
+      fast: deepseek-v4-flash
+      strong: deepseek-v4-pro
+      embedding: text-embedding-v4
   deepseek:
     base_url: https://api.deepseek.com/v1
     api_key_env: DEEPSEEK_API_KEY
@@ -16,7 +24,7 @@ providers:
       fast: qwen-flash
       strong: qwen3.7-max
       embedding: text-embedding-v4
-  # anthropic / openrouter 同构追加即可；Anthropic 原生协议 adapter P0 预留未实现
+  # anthropic 同构追加即可；Anthropic 原生协议 adapter P0 预留未实现
 
 # 任务 → 档位路由（省钱的关键：分类/抽取用 fast，生成用 strong）
 # 某供应商缺档位时自动落到下一个有该档位的供应商（如 embedding 只有 qwen 提供）
@@ -29,10 +37,10 @@ routing:
   embedding:       { tier: embedding }
   # P1 开通用助手时追加 chat 路由
 
-default_provider: deepseek
-fallback_provider: qwen   # 主供应商 5xx/超时/连接失败 → 自动降级重试一次
+default_provider: silra
+fallback_provider: qwen   # 主供应商 5xx/超时/连接失败 → 自动降级重试一次（需配 DASHSCOPE_API_KEY）
 
-# 元 / 1M tokens —— 示例价，接入时以官方价目表为准（记账 cost_estimate 用）
+# 元 / 1M tokens —— 示例价，实际成本以网关计费为准（模型名同官方，直接复用价目）
 pricing:
   deepseek-v4-flash: { input: 1.0, output: 4.0 }
   deepseek-v4-pro:   { input: 4.0, output: 16.0 }

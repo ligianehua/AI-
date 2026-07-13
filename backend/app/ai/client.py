@@ -40,6 +40,9 @@ from app.models.llm_call import LlmCall
 
 logger = logging.getLogger(__name__)
 
+# DashScope 系嵌入接口单请求批量上限
+EMBED_BATCH_SIZE = 10
+
 Message = dict[str, str]
 ClientFactory = Callable[[str, ProviderConfig], AsyncOpenAI]
 
@@ -400,14 +403,32 @@ class LLMClient:
     async def embed(
         self, texts: list[str], *, user_id: uuid.UUID | None = None
     ) -> list[list[float]]:
-        """文本嵌入。不做供应商降级：换嵌入模型会导致向量空间不一致。"""
+        """文本嵌入。不做供应商降级：换嵌入模型会导致向量空间不一致。
+
+        DashScope 系 text-embedding-v4 单请求最多 10 条，超出按批切分串行请求。
+        """
         await self._check_quota(user_id)
         route = resolve("embedding")
         assert route is not None
         started = time.perf_counter()
         try:
             client = self._client_for(route)
-            resp = await client.embeddings.create(model=route.model, input=texts)
+            vectors: list[list[float]] = []
+            tokens_in = 0
+            for i in range(0, len(texts), EMBED_BATCH_SIZE):
+                batch = texts[i : i + EMBED_BATCH_SIZE]
+                try:
+                    resp = await client.embeddings.create(model=route.model, input=batch)
+                except Exception as exc:
+                    # 嵌入无降级路（向量空间一致性），瞬时错误原地重试一次；
+                    # 密钥缺失等确定性错误直接抛出
+                    if _failure_status(exc) is None or isinstance(exc, LLMUnavailableError):
+                        raise
+                    logger.warning("嵌入请求瞬时失败（%s），重试一次", exc)
+                    resp = await client.embeddings.create(model=route.model, input=batch)
+                vectors.extend(item.embedding for item in resp.data)
+                if resp.usage:
+                    tokens_in += resp.usage.prompt_tokens
         except Exception as exc:
             await self._record(
                 user_id=user_id,
@@ -424,7 +445,6 @@ class LLMClient:
                 raise
             raise LLMUnavailableError("嵌入服务暂不可用，请稍后再试") from exc
         latency_ms = int((time.perf_counter() - started) * 1000)
-        tokens_in = resp.usage.prompt_tokens if resp.usage else 0
         await self._record(
             user_id=user_id,
             task_type="embedding",
@@ -435,7 +455,7 @@ class LLMClient:
             latency_ms=latency_ms,
             status="ok",
         )
-        return [item.embedding for item in resp.data]
+        return vectors
 
 
 @lru_cache

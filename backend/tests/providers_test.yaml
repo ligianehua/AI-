@@ -1,0 +1,36 @@
+# 单测专用模型注册表 —— 与生产 providers.yaml 解耦。
+# 单测断言固定为「deepseek 默认 / qwen 回退」；生产切换供应商/网关不应破坏单测。
+# 由 tests/conftest.py 通过 AI_PROVIDERS_FILE 环境变量指向本文件。
+
+providers:
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    api_key_env: DEEPSEEK_API_KEY
+    models:
+      fast: deepseek-v4-flash
+      strong: deepseek-v4-pro
+  qwen:
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key_env: DASHSCOPE_API_KEY
+    models:
+      fast: qwen-flash
+      strong: qwen3.7-max
+      embedding: text-embedding-v4
+
+routing:
+  ping:            { tier: fast,   temperature: 0.0 }
+  lead_scoring:    { tier: fast,   temperature: 0.1, json: true }
+  account_profile: { tier: strong, temperature: 0.3, json: true }
+  next_action:     { tier: fast,   temperature: 0.3, json: true }
+  script_gen:      { tier: strong, temperature: 0.7, stream: true }
+  embedding:       { tier: embedding }
+
+default_provider: deepseek
+fallback_provider: qwen
+
+pricing:
+  deepseek-v4-flash: { input: 1.0, output: 4.0 }
+  deepseek-v4-pro:   { input: 4.0, output: 16.0 }
+  qwen-flash:        { input: 0.8, output: 3.2 }
+  qwen3.7-max:       { input: 6.0, output: 24.0 }
+  text-embedding-v4: { input: 0.5, output: 0.0 }

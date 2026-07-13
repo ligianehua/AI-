@@ -10,7 +10,7 @@ import re
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import ColumnElement, Select, case, func, literal, select
+from sqlalchemy import ColumnElement, Select, case, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
@@ -58,14 +58,52 @@ async def _embed_query(
         return None
 
 
-def _query_terms(query: str, max_terms: int = 8) -> list[str]:
-    """切词：空白/标点分隔，保留长度 ≥2 的词。"""
-    terms = [t for t in re.split(r"[\s,，。！？;；、/|]+", query) if len(t) >= 2]
-    seen: list[str] = []
-    for term in terms:
-        if term not in seen:
-            seen.append(term)
-    return seen[:max_terms]
+_CJK_SEG = re.compile(r"[一-鿿]+")
+
+
+def _query_terms(query: str, max_terms: int = 16) -> list[str]:
+    """切词：空白/标点分隔，保留长度 ≥2 的词。
+
+    纯中文长段（≥4 字）再拆成字符二元组——中文查询通常整句无空格，
+    整段 ILIKE 必然落空，二元组保证关键词路对中文始终有召回。
+    """
+    terms: list[str] = []
+    for seg in re.split(r"[\s,，。！？;；、/|]+", query):
+        if len(seg) < 2:
+            continue
+        if len(seg) >= 4 and _CJK_SEG.fullmatch(seg):
+            candidates = [seg[i : i + 2] for i in range(len(seg) - 1)]
+        else:
+            candidates = [seg]
+        for term in candidates:
+            if term not in terms:
+                terms.append(term)
+    return terms[:max_terms]
+
+
+async def _discriminative_terms(
+    session: AsyncSession,
+    terms: list[str],
+    columns: list[tuple[InstrumentedAttribute[str], int]],
+    base_filter: list[ColumnElement[bool]],
+    max_df_ratio: float = 1 / 3,
+) -> list[str]:
+    """丢弃命中面过大的泛词（穷人版 IDF 停用词）。
+
+    中文二元组会切出「客户」这类语料里到处都是的词，它们只给关键词路灌噪声，
+    还会通过 RRF 把纯语义命中（关键词零命中、只靠向量路）的结果挤出前排。
+    一条 SQL 统计各词文档频率，保留 df ≤ max(1, 总数 × ratio) 的词。
+    """
+    df_cols = [
+        func.sum(case((or_(*[col.ilike(f"%{term}%") for col, _ in columns]), 1), else_=0))
+        for term in terms
+    ]
+    row = (await session.execute(select(func.count(), *df_cols).where(*base_filter))).one()
+    total = int(row[0])
+    if total == 0:
+        return terms
+    max_df = max(1, int(total * max_df_ratio))
+    return [term for term, df in zip(terms, row[1:], strict=True) if int(df or 0) <= max_df]
 
 
 def _keyword_score(
@@ -115,10 +153,16 @@ async def search_scripts(
         )
         rankings.append(await _ranked_ids(session, vec_stmt))
 
+    # 场景标题命中权重高于正文（标题是话术的语义浓缩）
+    kw_columns: list[tuple[InstrumentedAttribute[str], int]] = [
+        (Script.scenario, 2),
+        (Script.content, 1),
+    ]
     terms = _query_terms(query)
     if terms:
-        # 场景标题命中权重高于正文（标题是话术的语义浓缩）
-        kw_score = _keyword_score([(Script.scenario, 2), (Script.content, 1)], terms)
+        terms = await _discriminative_terms(session, terms, kw_columns, base_filter)
+    if terms:
+        kw_score = _keyword_score(kw_columns, terms)
         kw_stmt = (
             select(Script.id)
             .where(*base_filter, kw_score > 0)
@@ -167,9 +211,12 @@ async def search_knowledge(
         )
         rankings.append(await _ranked_ids(session, vec_stmt))
 
+    kw_columns: list[tuple[InstrumentedAttribute[str], int]] = [(KnowledgeChunk.content, 1)]
     terms = _query_terms(query)
     if terms:
-        kw_score = _keyword_score([(KnowledgeChunk.content, 1)], terms)
+        terms = await _discriminative_terms(session, terms, kw_columns, base_filter)
+    if terms:
+        kw_score = _keyword_score(kw_columns, terms)
         kw_stmt = (
             select(KnowledgeChunk.id)
             .where(*base_filter, kw_score > 0)

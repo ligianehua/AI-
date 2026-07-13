@@ -38,7 +38,14 @@ async def test_structured_output(require_llm_keys: None) -> None:
 
 
 async def test_embedding(require_llm_keys: None) -> None:
+    import pytest
+
+    from app.core.exceptions import LLMUnavailableError
+
     client = LLMClient()
-    vectors = await client.embed(["销售管理系统", "客户关系管理"])
+    try:
+        vectors = await client.embed(["销售管理系统", "客户关系管理"])
+    except LLMUnavailableError as exc:
+        pytest.skip(f"嵌入档位不可用（{exc.message}），需配 DASHSCOPE_API_KEY")
     assert len(vectors) == 2
     assert len(vectors[0]) == 1024

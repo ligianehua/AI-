@@ -49,7 +49,9 @@ def require_llm_keys() -> None:
 
 @pytest.fixture(scope="session")
 def database_url() -> Any:
-    from tests.conftest import _provision_pg, run_alembic
+    # 只能从无副作用的 pg_provision 导入——tests.conftest 顶层会把 LLM 配置
+    # 覆盖为单测假注册表，evals 需要真实 providers.yaml 与 .env 密钥。
+    from tests.pg_provision import _provision_pg, run_alembic
 
     url, cleanup = _provision_pg()
     try:

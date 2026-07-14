@@ -90,6 +90,12 @@ class KnowledgeDocStatus(StrEnum):
     FAILED = "failed"
 
 
+class ContractStatus(StrEnum):
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
+
+
 class LlmTaskType(StrEnum):
     PING = "ping"  # 冒烟
     LEAD_SCORING = "lead_scoring"
@@ -97,6 +103,8 @@ class LlmTaskType(StrEnum):
     NEXT_ACTION = "next_action"
     SCRIPT_GEN = "script_gen"
     CHAT = "chat"  # M9 通用助手
+    CONTRACT_EXTRACT = "contract_extract"  # M10 合同要素抽取
+    CONTRACT_REVIEW = "contract_review"  # M10 合同风险审查
     EMBEDDING = "embedding"
 
 

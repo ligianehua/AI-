@@ -35,6 +35,8 @@ routing:
   next_action:     { tier: fast,   temperature: 0.3, json: true }
   script_gen:      { tier: strong, temperature: 0.7, stream: true }
   chat:            { tier: strong, temperature: 0.3, stream: true }   # M9 通用助手（function calling）
+  contract_extract: { tier: fast,   temperature: 0.1, json: true }    # M10 合同要素抽取
+  contract_review:  { tier: strong, temperature: 0.2, json: true }    # M10 合同风险审查
   embedding:       { tier: embedding }
 
 default_provider: silra

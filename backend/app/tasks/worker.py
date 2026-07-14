@@ -9,6 +9,7 @@ from arq import cron
 from arq.connections import RedisSettings
 
 from app.core.config import get_settings
+from app.tasks.contract import process_contract_task
 from app.tasks.discovery import run_discovery_task
 from app.tasks.embedding import embed_knowledge_doc_task, embed_script_task
 from app.tasks.profile import account_profile_task
@@ -36,6 +37,7 @@ class WorkerSettings:
         embed_script_task,
         embed_knowledge_doc_task,
         run_discovery_task,
+        process_contract_task,
     ]
     # ARQ cron 按 UTC 计时：默认 hour=0 即北京时间 08:00（RISK_SCAN_HOUR_UTC 可调）
     cron_jobs = [cron(risk_scan_task, hour=get_settings().risk_scan_hour_utc, minute=0)]

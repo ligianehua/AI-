@@ -417,8 +417,41 @@ service 层查询，RBAC 天然继承当前用户）→ 结果以 tool 消息回
 - [ ] 工具选择 eval ≥20 条（真实 LLM 断言首个工具与关键参数）
 - [ ] make lint && make test 全绿
 
-## 7. P1 模块简要规格（M10–M12，逐个启动前再细化）
-- **M10 合同处理**：docx 模板变量填充生成；上传合同 → LLM 抽取要素（甲乙方/金额/期限/付款节点）→ 风险条款清单比对审查。输出永远是"提示"不是"结论"，UI 注明不构成法律意见。
+### 6.8 合同处理（M10）
+
+**用户故事**：销售把客户发来的合同传进系统，1 分钟内拿到要素摘要和风险条款提示；要发合同时从商机一键生成标准草稿 docx。
+
+API：
+```
+POST   /api/v1/contracts/upload          上传（docx/txt/md ≤10MB）→ 异步抽取+审查
+GET    /api/v1/contracts                 列表（RBAC，含状态）
+GET    /api/v1/contracts/{id}            详情（extracted + review）
+POST   /api/v1/contracts/{id}/reprocess  失败重试
+DELETE /api/v1/contracts/{id}            软删
+POST   /api/v1/contracts/generate        body {opportunity_id, payment_terms?} → 标准草稿 docx 下载
+```
+
+**处理管线**（异步任务）：extract_text（复用知识库解析）→ LLM 结构化抽取
+`{甲方, 乙方, 金额, 服务期, 签署日, 付款约定[], 其他关键条款[], confidence_note}`（fast 档，
+全字符串字段——合同写法千奇百怪，不强行 parse 数字/日期）→ LLM 风险审查（strong 档）：
+对照配置化清单（`contract_risk_rules.yaml`：违约责任/付款约定/验收标准/知识产权/保密/
+争议解决/单方解除/自动续约）输出 `{risks[{条款引用, 等级, 问题, 建议}], missing_clauses[], overall_note}`。
+
+**模板生成**：python-docx 代码生成标准销售合同草稿（甲乙方/金额/服务期/付款方式从商机与
+客户带入），文首注明"AI 生成草稿，正式签署前须经法务审核"。
+
+**红线**：所有 AI 输出是"提示"不是"结论"；UI 与生成文档均注明不构成法律意见。
+`LlmTaskType` 加 contract_extract / contract_review；routing 同步追加。
+
+验收标准：
+- [ ] 上传 → 抽取要素与风险清单在详情页结构化展示（不是文本墙）
+- [ ] 信息不足时抽取结果明示「未提及」而非编造（eval 验证）
+- [ ] 风险审查按清单比对，缺失关键条款进 missing_clauses
+- [ ] 从商机生成的 docx 可下载打开，变量填充正确，含法务审核声明
+- [ ] sales 只能看自己的合同（三角色 RBAC 测试）
+- [ ] 抽取 eval ≥20 条 + 审查 eval；make lint && make test 全绿
+
+## 7. P1 模块简要规格（M11–M12，逐个启动前再细化）
 - **M11 销售预测**：加权 pipeline（Σ 金额 × 阶段概率）+ 按 `forecast_snapshots` 周度快照做趋势外推。数据 < 2 个完整季度时只展示加权 pipeline，不做时序预测——没有数据的预测是玄学，UI 必须展示置信区间和数据量提示。
 - **M12 业绩分析**：团队/个人维度（成交额、转化率、周期、活动量），LLM 读聚合数据生成月度归因解读（"转化率下降主因是 proposal→negotiation 停滞"）。
 
@@ -438,7 +471,8 @@ service 层查询，RBAC 天然继承当前用户）→ 结果以 tool 消息回
 | M7 | 打磨收尾 | 仪表盘、admin 用户管理页、E2E（Playwright 冒烟 5 条主流程）、部署文档 README + 生产初始化 admin 脚本 | 全量测试绿；docker compose prod 模式可部署；演示脚本可走通 |
 | M8 | 线索发现（东南亚） | §6.6 前后端：订阅管理 + Places 抓取任务 + 候选池 + 领取转线索 | §6.6 验收清单全过 |
 | M9 | 通用 AI 助手 | §6.7 前后端：SSE 对话 + 4 只读工具 function calling | §6.7 验收清单全过 |
-| M10–M12 | P1 | 合同 / 预测 / 业绩 | P0 上线且积累数据后启动 |
+| M10 | 合同处理 | §6.8 前后端：上传抽取审查 + 模板生成 | §6.8 验收清单全过 |
+| M11–M12 | P1 | 预测 / 业绩 | P0 上线且积累数据后启动 |
 
 ## 9. 目录结构
 

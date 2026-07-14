@@ -45,9 +45,7 @@ async def test_first_tool_selection(
         TOOLS,
     )
     expect = case["expect"]
-    assert result.tool_calls, (
-        f"{case['id']} 未调用任何工具，直接回复了：{result.content[:200]}"
-    )
+    assert result.tool_calls, f"{case['id']} 未调用任何工具，直接回复了：{result.content[:200]}"
     first = result.tool_calls[0]
     assert first.name == expect["tool"], (
         f"{case['id']} 期望工具 {expect['tool']}，实际 {first.name}({first.arguments})"

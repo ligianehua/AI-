@@ -7,6 +7,7 @@ from app.api.v1 import (
     assistant,
     auth,
     contacts,
+    contracts,
     dashboard,
     discovery,
     knowledge,
@@ -34,3 +35,4 @@ api_router.include_router(scripts.router)
 api_router.include_router(knowledge.router)
 api_router.include_router(discovery.router)
 api_router.include_router(assistant.router)
+api_router.include_router(contracts.router)

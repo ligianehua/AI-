@@ -1,0 +1,26 @@
+# 合同风险审查检查清单（乙方视角）。改这里即调整审查范围，不改代码。
+checklist:
+  - key: breach
+    label: 违约责任
+    hint: 双方违约责任是否对等、是否只约束乙方、违约金比例是否畸高
+  - key: payment
+    label: 付款约定
+    hint: 付款节点/比例/期限是否明确，是否存在无限期拖延付款的空间（如「验收后另行商定」）
+  - key: acceptance
+    label: 验收标准
+    hint: 验收标准与期限是否明确，是否存在甲方单方面认定不合格的条款
+  - key: ip
+    label: 知识产权
+    hint: 交付物知识产权归属是否清晰，是否无偿转让乙方既有知识产权
+  - key: confidentiality
+    label: 保密条款
+    hint: 保密义务是否双向、期限是否合理
+  - key: dispute
+    label: 争议解决
+    hint: 管辖法院/仲裁机构是否明确，是否明显不利于乙方
+  - key: termination
+    label: 单方解除
+    hint: 是否存在甲方可无条件单方解除而乙方无补偿的条款
+  - key: renewal
+    label: 自动续约
+    hint: 是否存在不利的自动续约或价格锁定条款

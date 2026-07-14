@@ -50,3 +50,36 @@ class AccountProfileOutput(BaseModel):
     risks: list[str] = Field(description="风险")
     suggestions: list[str] = Field(min_length=1, description="行动建议")
     confidence_note: str = Field(min_length=1, description="置信说明，须注明依据的跟进记录条数")
+
+
+class ContractExtractOutput(BaseModel):
+    """合同要素抽取（M10）。全字符串字段：合同写法千奇百怪，不强行 parse 数字/日期；
+    原文未提及的字段必须填「未提及」，禁止编造。"""
+
+    party_a: str = Field(min_length=1, description="甲方名称，未提及填「未提及」")
+    party_b: str = Field(min_length=1, description="乙方名称，未提及填「未提及」")
+    amount: str = Field(
+        min_length=1, description="合同金额原文（含币种/大小写），未提及填「未提及」"
+    )
+    period: str = Field(min_length=1, description="服务期/合同期限原文，未提及填「未提及」")
+    sign_date: str = Field(min_length=1, description="签署日期原文，未提及填「未提及」")
+    payment_terms: list[str] = Field(description="付款约定条目（原文措辞），无则空列表")
+    other_key_terms: list[str] = Field(
+        description="其他关键条款摘要（违约/保密/验收等），无则空列表"
+    )
+    confidence_note: str = Field(min_length=1, description="抽取置信说明，注明哪些字段原文未提及")
+
+
+class ContractRiskItem(BaseModel):
+    clause_quote: str = Field(min_length=1, description="风险条款原文引用（截取关键句）")
+    level: Literal["high", "medium", "low"] = Field(description="风险等级")
+    issue: str = Field(min_length=1, description="问题说明")
+    suggestion: str = Field(min_length=1, description="修改建议")
+
+
+class ContractReviewOutput(BaseModel):
+    """合同风险审查（M10）：对照检查清单比对。输出是提示不是结论，不构成法律意见。"""
+
+    risks: list[ContractRiskItem] = Field(description="发现的风险条款，无则空列表")
+    missing_clauses: list[str] = Field(description="清单中缺失的关键条款（如「未约定违约责任」）")
+    overall_note: str = Field(min_length=1, description="总体提示（一两句，须提醒经法务审核）")

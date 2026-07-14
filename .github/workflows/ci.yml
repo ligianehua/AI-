@@ -8,6 +8,23 @@ on:
 jobs:
   lint-test:
     runs-on: ubuntu-latest
+    services:
+      # 测试库走三级供给的第一级（TEST_DATABASE_URL），绕开 testcontainers 在 CI 的镜像拉取不确定性
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app_test
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/app_test
     steps:
       - uses: actions/checkout@v4
 

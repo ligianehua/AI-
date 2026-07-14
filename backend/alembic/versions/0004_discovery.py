@@ -94,9 +94,7 @@ def upgrade() -> None:
         "discovery_candidates",
         ["subscription_id"],
     )
-    op.create_index(
-        op.f("ix_discovery_candidates_owner_id"), "discovery_candidates", ["owner_id"]
-    )
+    op.create_index(op.f("ix_discovery_candidates_owner_id"), "discovery_candidates", ["owner_id"])
     op.create_index(op.f("ix_discovery_candidates_status"), "discovery_candidates", ["status"])
     # 同一商户全库只入池一次（软删行不占名额），与线索撞单防护同一哲学
     op.create_index(

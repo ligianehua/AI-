@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable
 from datetime import date, timedelta
 from decimal import Decimal
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -95,7 +96,7 @@ async def test_snapshot_idempotent_and_history_scope(
 
 
 async def test_snapshot_endpoint_rbac(
-    client: AsyncClient, roles: RoleUsers, login: LoginFn, monkeypatch
+    client: AsyncClient, roles: RoleUsers, login: LoginFn, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from typing import Any
 

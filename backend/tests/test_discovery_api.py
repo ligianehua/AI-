@@ -120,6 +120,8 @@ async def test_run_endpoint_enqueues_and_guards(
     sub = await _make_subscription(session, roles.sales_a)
     headers = await login("sales_a@test.cn")
 
+    # 单测不依赖 .env 里的真实 key（CI 无 .env）：显式给 settings 单例注入假 key
+    monkeypatch.setattr(get_settings(), "google_maps_api_key", "unit-test-key")
     resp = await client.post(f"/api/v1/discovery/subscriptions/{sub.id}/run", headers=headers)
     assert resp.status_code == 202, resp.text
     assert resp.json()["enqueued"] is True

@@ -46,7 +46,10 @@ async def migration_db_url(database_url: str) -> AsyncIterator[str]:
         await conn.execute(text("CREATE DATABASE migration_test"))
     await admin_engine.dispose()
 
-    yield str(make_url(database_url).set(database="migration_test"))
+    # str(URL) 会把密码打码成 ***，子进程 alembic 会拿字面 *** 去认证——必须显式保留密码
+    yield make_url(database_url).set(database="migration_test").render_as_string(
+        hide_password=False
+    )
 
 
 async def test_upgrade_downgrade_cycle(migration_db_url: str) -> None:

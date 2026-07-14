@@ -959,6 +959,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analytics/performance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 业绩指标：本月 vs 上月（RBAC） */
+        get: operations["get_performance_api_v1_analytics_performance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/insight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AI 月度归因解读（引用真实指标） */
+        post: operations["generate_insight_api_v1_analytics_insight_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1907,6 +1941,27 @@ export interface components {
             page: number;
             /** Page Size */
             page_size: number;
+        };
+        /**
+         * PerformanceInsightOutput
+         * @description 业绩月度归因解读（M12）。只引用输入中的数字，数据不足必须明说。
+         */
+        PerformanceInsightOutput: {
+            /**
+             * Summary
+             * @description 一段话总结本月表现（引用关键数字）
+             */
+            summary: string;
+            /**
+             * Findings
+             * @description 归因发现，须引用输入数字
+             */
+            findings: string[];
+            /**
+             * Suggestions
+             * @description 下月行动建议
+             */
+            suggestions: string[];
         };
         /** PingRequest */
         PingRequest: {
@@ -4569,6 +4624,72 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    get_performance_api_v1_analytics_performance_get: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM，默认当月 */
+                month?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_insight_api_v1_analytics_insight_post: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM，默认当月 */
+                month?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceInsightOutput"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -26,6 +26,7 @@ routing:
   chat:            { tier: strong, temperature: 0.3, stream: true }
   contract_extract: { tier: fast,   temperature: 0.1, json: true }
   contract_review:  { tier: strong, temperature: 0.2, json: true }
+  performance_insight: { tier: strong, temperature: 0.3, json: true }
   embedding:       { tier: embedding }
 
 default_provider: deepseek

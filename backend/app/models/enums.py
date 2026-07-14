@@ -105,6 +105,7 @@ class LlmTaskType(StrEnum):
     CHAT = "chat"  # M9 通用助手
     CONTRACT_EXTRACT = "contract_extract"  # M10 合同要素抽取
     CONTRACT_REVIEW = "contract_review"  # M10 合同风险审查
+    PERFORMANCE_INSIGHT = "performance_insight"  # M12 业绩归因解读
     EMBEDDING = "embedding"
 
 

@@ -83,3 +83,11 @@ class ContractReviewOutput(BaseModel):
     risks: list[ContractRiskItem] = Field(description="发现的风险条款，无则空列表")
     missing_clauses: list[str] = Field(description="清单中缺失的关键条款（如「未约定违约责任」）")
     overall_note: str = Field(min_length=1, description="总体提示（一两句，须提醒经法务审核）")
+
+
+class PerformanceInsightOutput(BaseModel):
+    """业绩月度归因解读（M12）。只引用输入中的数字，数据不足必须明说。"""
+
+    summary: str = Field(min_length=1, description="一段话总结本月表现（引用关键数字）")
+    findings: list[str] = Field(min_length=1, max_length=5, description="归因发现，须引用输入数字")
+    suggestions: list[str] = Field(min_length=1, max_length=4, description="下月行动建议")

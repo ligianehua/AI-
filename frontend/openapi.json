@@ -3663,6 +3663,120 @@
           }
         ]
       }
+    },
+    "/api/v1/analytics/performance": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "业绩指标：本月 vs 上月（RBAC）",
+        "operationId": "get_performance_api_v1_analytics_performance_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "YYYY-MM，默认当月",
+              "title": "Month"
+            },
+            "description": "YYYY-MM，默认当月"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Performance Api V1 Analytics Performance Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/insight": {
+      "post": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "AI 月度归因解读（引用真实指标）",
+        "operationId": "generate_insight_api_v1_analytics_insight_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "YYYY-MM，默认当月",
+              "title": "Month"
+            },
+            "description": "YYYY-MM，默认当月"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerformanceInsightOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6593,6 +6707,44 @@
           "page_size"
         ],
         "title": "PageResult[UserOut]"
+      },
+      "PerformanceInsightOutput": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Summary",
+            "description": "一段话总结本月表现（引用关键数字）"
+          },
+          "findings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Findings",
+            "description": "归因发现，须引用输入数字"
+          },
+          "suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Suggestions",
+            "description": "下月行动建议"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "findings",
+          "suggestions"
+        ],
+        "title": "PerformanceInsightOutput",
+        "description": "业绩月度归因解读（M12）。只引用输入中的数字，数据不足必须明说。"
       },
       "PingRequest": {
         "properties": {

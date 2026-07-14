@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { href: "/scripts", label: "话术" },
   { href: "/contracts", label: "合同" },
   { href: "/forecast", label: "预测" },
+  { href: "/analytics", label: "业绩" },
   { href: "/assistant", label: "助手" },
 ];
 

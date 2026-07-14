@@ -380,9 +380,44 @@ POST   /api/v1/discovery/candidates/{id}/ignore   忽略
 - [ ] key 缺失时 run 返回可读中文错误
 - [ ] 迁移可升可降；make lint && make test 全绿
 
-## 7. P1 模块简要规格（M9–M12，逐个启动前再细化）
+### 6.7 通用 AI 助手（M9）
 
-- **M9 通用 AI 助手**：对话入口（SSE 流式），function calling 挂 4 个只读工具 `search_leads / search_opportunities / get_account_360 / recommend_scripts`，能回答"我手上哪个商机风险最大？"。权限继承当前用户；`routing` 追加 chat 档位、`llm_calls.task_type` 追加 chat。
+**用户故事**：销售在聊天框里问"我手上哪个商机风险最大？""帮我看看 XX 客户的情况""来一条催款话术"，助手先查真实数据再回答，全程可见它查了什么。
+
+API：
+```
+POST /api/v1/assistant/chat    body: { message, history: [{role, content}] ≤10 轮 }
+     → SSE：tool {name, label} → delta {text} → done {llm_call_id} → error {message}
+```
+
+**Function calling 循环**（服务端，上限 5 轮工具调用）：
+`chat` 路由（strong 档）带 4 个只读工具 → LLM 决定调哪个 → 服务端执行（全部走
+service 层查询，RBAC 天然继承当前用户）→ 结果以 tool 消息回填 → 循环；
+无工具调用时流式输出最终回答（tool_choice=none 强制作答）。
+
+**工具（全部只读，返回紧凑 JSON，单次 ≤20 条）**：
+| 工具 | 参数 | 数据 |
+|---|---|---|
+| search_leads | status? / min_score? / keyword? / limit? | 线索列表（含分数、来源、状态） |
+| search_opportunities | stage? / keyword? / limit? | 商机列表（含金额、阶段停留天数、距上次跟进天数——风险判断的原料） |
+| get_account_360 | account_name | 客户档案 + AI 画像摘要 + 联系人 + 最近 5 条跟进 |
+| recommend_scripts | query / category? | 话术库混合检索 top-5 |
+
+**约束**：
+- 工具只读；助手 prompt 写死"不能修改数据、不编造数字、回答引用查到的数据、全中文、金额 CNY"
+- 每轮工具调用与最终生成各记一笔 `llm_calls`（task_type=chat），计入日 token 限额
+- 对话历史不落库（P1 范围外）：前端 state 保存，刷新即清，随请求回传 ≤10 轮
+- `routing` 追加 `chat` 档位；`LlmTaskType` 追加 CHAT
+
+验收标准：
+- [ ] "我手上哪个商机风险最大" → 调 search_opportunities → 回答引用真实商机名与停滞天数
+- [ ] sales 问数只能得到自己的数据（工具层 RBAC 测试，三角色）
+- [ ] 工具循环上限 5 轮，未知工具/参数错误容错（回填错误给 LLM 而非 500）
+- [ ] SSE 事件序列完整，前端可见"正在查询 XX"过程
+- [ ] 工具选择 eval ≥20 条（真实 LLM 断言首个工具与关键参数）
+- [ ] make lint && make test 全绿
+
+## 7. P1 模块简要规格（M10–M12，逐个启动前再细化）
 - **M10 合同处理**：docx 模板变量填充生成；上传合同 → LLM 抽取要素（甲乙方/金额/期限/付款节点）→ 风险条款清单比对审查。输出永远是"提示"不是"结论"，UI 注明不构成法律意见。
 - **M11 销售预测**：加权 pipeline（Σ 金额 × 阶段概率）+ 按 `forecast_snapshots` 周度快照做趋势外推。数据 < 2 个完整季度时只展示加权 pipeline，不做时序预测——没有数据的预测是玄学，UI 必须展示置信区间和数据量提示。
 - **M12 业绩分析**：团队/个人维度（成交额、转化率、周期、活动量），LLM 读聚合数据生成月度归因解读（"转化率下降主因是 proposal→negotiation 停滞"）。
@@ -402,7 +437,8 @@ POST   /api/v1/discovery/candidates/{id}/ignore   忽略
 | M6 | 话术推荐 | §6.4 话术库 + RAG + 生成 + 知识库上传 | §6.4 验收清单全过 + 检索质量抽查（top-5 命中人工评 ≥80%） |
 | M7 | 打磨收尾 | 仪表盘、admin 用户管理页、E2E（Playwright 冒烟 5 条主流程）、部署文档 README + 生产初始化 admin 脚本 | 全量测试绿；docker compose prod 模式可部署；演示脚本可走通 |
 | M8 | 线索发现（东南亚） | §6.6 前后端：订阅管理 + Places 抓取任务 + 候选池 + 领取转线索 | §6.6 验收清单全过 |
-| M9–M12 | P1 | AI 助手 / 合同 / 预测 / 业绩 | P0 上线且积累数据后启动 |
+| M9 | 通用 AI 助手 | §6.7 前后端：SSE 对话 + 4 只读工具 function calling | §6.7 验收清单全过 |
+| M10–M12 | P1 | 合同 / 预测 / 业绩 | P0 上线且积累数据后启动 |
 
 ## 9. 目录结构
 

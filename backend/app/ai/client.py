@@ -43,7 +43,8 @@ logger = logging.getLogger(__name__)
 # DashScope 系嵌入接口单请求批量上限
 EMBED_BATCH_SIZE = 10
 
-Message = dict[str, str]
+# 值放宽为 Any：tool 消息带 tool_call_id、assistant 消息带 tool_calls 列表
+Message = dict[str, Any]
 ClientFactory = Callable[[str, ProviderConfig], AsyncOpenAI]
 
 _RETRY_PROMPT = (
@@ -55,6 +56,26 @@ _RETRY_PROMPT = (
 @dataclass(frozen=True)
 class ChatResult:
     content: str
+    provider: str
+    model: str
+    latency_ms: int
+
+
+@dataclass(frozen=True)
+class ToolCallRequest:
+    """LLM 发起的一次工具调用请求（arguments 为原始 JSON 字符串，由调用方解析校验）。"""
+
+    id: str
+    name: str
+    arguments: str
+
+
+@dataclass(frozen=True)
+class ToolsResult:
+    """带工具的补全结果：tool_calls 非空表示 LLM 要求执行工具，否则 content 即答案。"""
+
+    content: str
+    tool_calls: list[ToolCallRequest]
     provider: str
     model: str
     latency_ms: int
@@ -300,6 +321,99 @@ class LLMClient:
             except ValidationError as err2:
                 raise LLMOutputError("AI 返回格式不合法，已重试仍失败") from err2
 
+    async def chat_tools(
+        self,
+        task_type: str,
+        messages: list[Message],
+        tools: list[dict[str, Any]],
+        *,
+        user_id: uuid.UUID | None = None,
+    ) -> ToolsResult:
+        """带工具的非流式补全（function calling 一轮）。降级策略与 chat 一致。"""
+        await self._check_quota(user_id)
+        route = resolve(task_type)
+        assert route is not None
+        try:
+            return await self._complete_tools_once(
+                route, messages, tools, task_type=task_type, user_id=user_id
+            )
+        except Exception as exc:
+            if _failure_status(exc) is None:
+                raise LLMUnavailableError("AI 服务暂不可用，请稍后再试") from exc
+            fallback = resolve(task_type, use_fallback=True)
+            if fallback is None:
+                raise LLMUnavailableError("AI 服务暂不可用，请稍后再试") from exc
+            logger.warning(
+                "供应商 %s 工具调用失败（%s），降级到 %s",
+                route.provider_name,
+                exc,
+                fallback.provider_name,
+            )
+            try:
+                return await self._complete_tools_once(
+                    fallback, messages, tools, task_type=task_type, user_id=user_id
+                )
+            except Exception as exc2:
+                raise LLMUnavailableError("AI 服务暂不可用，请稍后再试") from exc2
+
+    async def _complete_tools_once(
+        self,
+        route: ResolvedRoute,
+        messages: list[Message],
+        tools: list[dict[str, Any]],
+        *,
+        task_type: str,
+        user_id: uuid.UUID | None,
+    ) -> ToolsResult:
+        started = time.perf_counter()
+        try:
+            client = self._client_for(route)
+            resp = await client.chat.completions.create(
+                model=route.model,
+                messages=cast(list[ChatCompletionMessageParam], messages),
+                temperature=route.temperature,
+                tools=cast(Any, tools),
+            )
+        except Exception as exc:
+            await self._record(
+                user_id=user_id,
+                task_type=task_type,
+                provider=route.provider_name,
+                model=route.model,
+                tokens_in=0,
+                tokens_out=0,
+                latency_ms=int((time.perf_counter() - started) * 1000),
+                status=_failure_status(exc) or "error",
+                error_msg=str(exc),
+            )
+            raise
+        latency_ms = int((time.perf_counter() - started) * 1000)
+        await self._record(
+            user_id=user_id,
+            task_type=task_type,
+            provider=route.provider_name,
+            model=route.model,
+            tokens_in=resp.usage.prompt_tokens if resp.usage else 0,
+            tokens_out=resp.usage.completion_tokens if resp.usage else 0,
+            latency_ms=latency_ms,
+            status="ok",
+        )
+        msg = resp.choices[0].message
+        calls: list[ToolCallRequest] = []
+        for tc in msg.tool_calls or []:
+            fn = getattr(tc, "function", None)  # 排除非 function 类型的自定义工具调用
+            if fn is not None:
+                calls.append(
+                    ToolCallRequest(id=tc.id, name=fn.name, arguments=fn.arguments or "{}")
+                )
+        return ToolsResult(
+            content=msg.content or "",
+            tool_calls=calls,
+            provider=route.provider_name,
+            model=route.model,
+            latency_ms=latency_ms,
+        )
+
     async def chat_stream(
         self,
         task_type: str,
@@ -307,10 +421,14 @@ class LLMClient:
         *,
         user_id: uuid.UUID | None = None,
         meta: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | None = None,
     ) -> AsyncIterator[str]:
         """流式补全。仅在建立连接阶段降级；流中途出错直接报错并记账。
 
         meta：调用方传入 dict 时，流成功结束后写入 meta["llm_call_id"]（用户反馈落点）。
+        tools/tool_choice：消息里含 tool 角色时必须带上 tools（协议要求）；
+        tool_choice="none" 强制模型只输出文本（助手最终作答用）。
         """
         await self._check_quota(user_id)
         route = resolve(task_type)
@@ -319,12 +437,18 @@ class LLMClient:
 
         async def _open(r: ResolvedRoute) -> Any:
             client = self._client_for(r)
+            kwargs: dict[str, Any] = {}
+            if tools is not None:
+                kwargs["tools"] = tools
+            if tool_choice is not None:
+                kwargs["tool_choice"] = tool_choice
             return await client.chat.completions.create(
                 model=r.model,
                 messages=cast(list[ChatCompletionMessageParam], messages),
                 temperature=r.temperature,
                 stream=True,
                 stream_options={"include_usage": True},
+                **kwargs,
             )
 
         try:

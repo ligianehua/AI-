@@ -23,6 +23,7 @@ routing:
   account_profile: { tier: strong, temperature: 0.3, json: true }
   next_action:     { tier: fast,   temperature: 0.3, json: true }
   script_gen:      { tier: strong, temperature: 0.7, stream: true }
+  chat:            { tier: strong, temperature: 0.3, stream: true }
   embedding:       { tier: embedding }
 
 default_provider: deepseek

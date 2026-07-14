@@ -96,6 +96,7 @@ class LlmTaskType(StrEnum):
     ACCOUNT_PROFILE = "account_profile"
     NEXT_ACTION = "next_action"
     SCRIPT_GEN = "script_gen"
+    CHAT = "chat"  # M9 通用助手
     EMBEDDING = "embedding"
 
 

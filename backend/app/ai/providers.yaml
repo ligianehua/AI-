@@ -34,8 +34,8 @@ routing:
   account_profile: { tier: strong, temperature: 0.3, json: true }
   next_action:     { tier: fast,   temperature: 0.3, json: true }
   script_gen:      { tier: strong, temperature: 0.7, stream: true }
+  chat:            { tier: strong, temperature: 0.3, stream: true }   # M9 通用助手（function calling）
   embedding:       { tier: embedding }
-  # P1 开通用助手时追加 chat 路由
 
 default_provider: silra
 fallback_provider: qwen   # 主供应商 5xx/超时/连接失败 → 自动降级重试一次（需配 DASHSCOPE_API_KEY）

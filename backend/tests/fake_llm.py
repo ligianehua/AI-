@@ -4,10 +4,24 @@ from types import SimpleNamespace
 from typing import Any
 
 
-def completion(content: str, tokens_in: int = 10, tokens_out: int = 5) -> Any:
+def completion(
+    content: str,
+    tokens_in: int = 10,
+    tokens_out: int = 5,
+    tool_calls: list[Any] | None = None,
+) -> Any:
     return SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=content))],
+        choices=[SimpleNamespace(message=SimpleNamespace(content=content, tool_calls=tool_calls))],
         usage=SimpleNamespace(prompt_tokens=tokens_in, completion_tokens=tokens_out),
+    )
+
+
+def tool_call(call_id: str, name: str, arguments: str) -> Any:
+    """OpenAI function tool_call 替身（completion(tool_calls=[...]) 用）。"""
+    return SimpleNamespace(
+        id=call_id,
+        type="function",
+        function=SimpleNamespace(name=name, arguments=arguments),
     )
 
 

@@ -4,6 +4,7 @@ from app.api.v1 import (
     accounts,
     activities,
     ai,
+    assistant,
     auth,
     contacts,
     dashboard,
@@ -32,3 +33,4 @@ api_router.include_router(notifications.router)
 api_router.include_router(scripts.router)
 api_router.include_router(knowledge.router)
 api_router.include_router(discovery.router)
+api_router.include_router(assistant.router)

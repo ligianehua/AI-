@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: "/accounts", label: "客户" },
   { href: "/opportunities", label: "商机" },
   { href: "/scripts", label: "话术" },
+  { href: "/assistant", label: "助手" },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {

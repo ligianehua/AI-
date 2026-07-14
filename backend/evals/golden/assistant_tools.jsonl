@@ -1,0 +1,23 @@
+# M9 助手工具选择：给定用户问题，断言 LLM 首个工具调用（名称 + 关键参数）
+{"id": "at-01", "input": {"question": "我手上哪个商机风险最大？"}, "expect": {"tool": "search_opportunities"}}
+{"id": "at-02", "input": {"question": "有哪些商机超过一周没跟进了？"}, "expect": {"tool": "search_opportunities"}}
+{"id": "at-03", "input": {"question": "这个月快到期该收尾的商机有哪些？"}, "expect": {"tool": "search_opportunities"}}
+{"id": "at-04", "input": {"question": "谈判阶段的商机给我列一下"}, "expect": {"tool": "search_opportunities", "args_eq": {"stage": "negotiation"}}}
+{"id": "at-05", "input": {"question": "已经丢单的商机有哪些？"}, "expect": {"tool": "search_opportunities", "args_eq": {"stage": "lost"}}}
+{"id": "at-06", "input": {"question": "我最近赢下来的单子有哪些？"}, "expect": {"tool": "search_opportunities", "args_eq": {"stage": "won"}}}
+{"id": "at-07", "input": {"question": "报价阶段卡住的商机有哪些？"}, "expect": {"tool": "search_opportunities", "args_eq": {"stage": "proposal"}}}
+{"id": "at-08", "input": {"question": "我手上评分最高的线索是哪几个？"}, "expect": {"tool": "search_leads"}}
+{"id": "at-09", "input": {"question": "还没联系的新线索有哪些？"}, "expect": {"tool": "search_leads", "args_eq": {"status": "new"}}}
+{"id": "at-10", "input": {"question": "评分 80 分以上的线索有几个？"}, "expect": {"tool": "search_leads", "args_has": ["min_score"]}}
+{"id": "at-11", "input": {"question": "帮我查查南京银盛金融这条线索"}, "expect": {"tool": "search_leads", "args_contains": {"keyword": "银盛"}}}
+{"id": "at-12", "input": {"question": "被标成无效的线索都有哪些？"}, "expect": {"tool": "search_leads", "args_eq": {"status": "invalid"}}}
+{"id": "at-13", "input": {"question": "帮我看看杭州云帆科技这个客户的情况"}, "expect": {"tool": "get_account_360", "args_contains": {"account_name": "云帆"}}}
+{"id": "at-14", "input": {"question": "苏州恒星制造是做什么的？他们的痛点是什么？"}, "expect": {"tool": "get_account_360", "args_contains": {"account_name": "恒星"}}}
+{"id": "at-15", "input": {"question": "广州潮流数码有哪些联系人？"}, "expect": {"tool": "get_account_360", "args_contains": {"account_name": "潮流"}}}
+{"id": "at-16", "input": {"question": "最近和北京华信软件都聊了什么？"}, "expect": {"tool": "get_account_360", "args_contains": {"account_name": "华信"}}}
+{"id": "at-17", "input": {"question": "客户说太贵了我怎么回？"}, "expect": {"tool": "recommend_scripts"}}
+{"id": "at-18", "input": {"question": "给我一条催客户签约的话术"}, "expect": {"tool": "recommend_scripts"}}
+{"id": "at-19", "input": {"question": "给我一条唤醒沉默客户的话术"}, "expect": {"tool": "recommend_scripts"}}
+{"id": "at-20", "input": {"question": "有没有应对「我们已经在用竞品」的话术？"}, "expect": {"tool": "recommend_scripts"}}
+{"id": "at-21", "input": {"question": "初次电话拜访制造业客户怎么开场比较好？"}, "expect": {"tool": "recommend_scripts"}}
+{"id": "at-22", "input": {"question": "客户预算只有我们报价的一半，怎么谈？"}, "expect": {"tool": "recommend_scripts"}}

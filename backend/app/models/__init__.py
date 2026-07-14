@@ -7,6 +7,7 @@ from app.models.contact import Contact
 from app.models.contract import Contract
 from app.models.discovery_candidate import DiscoveryCandidate
 from app.models.discovery_subscription import DiscoverySubscription
+from app.models.forecast_snapshot import ForecastSnapshot
 from app.models.knowledge_chunk import KnowledgeChunk
 from app.models.knowledge_doc import KnowledgeDoc
 from app.models.lead import Lead
@@ -26,6 +27,7 @@ __all__ = [
     "Contract",
     "DiscoveryCandidate",
     "DiscoverySubscription",
+    "ForecastSnapshot",
     "KnowledgeChunk",
     "KnowledgeDoc",
     "Lead",

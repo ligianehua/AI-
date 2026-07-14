@@ -10,6 +10,7 @@ from app.api.v1 import (
     contracts,
     dashboard,
     discovery,
+    forecast,
     knowledge,
     leads,
     notifications,
@@ -36,3 +37,4 @@ api_router.include_router(knowledge.router)
 api_router.include_router(discovery.router)
 api_router.include_router(assistant.router)
 api_router.include_router(contracts.router)
+api_router.include_router(forecast.router)

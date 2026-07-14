@@ -3607,6 +3607,62 @@
           }
         ]
       }
+    },
+    "/api/v1/forecast": {
+      "get": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "销售预测：加权 pipeline + 快照走势 + 外推（数据量守卫）",
+        "operationId": "get_forecast_api_v1_forecast_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Forecast Api V1 Forecast Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/forecast/snapshot": {
+      "post": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "手动生成今日快照（manager/admin）",
+        "operationId": "take_snapshot_api_v1_forecast_snapshot_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Take Snapshot Api V1 Forecast Snapshot Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {

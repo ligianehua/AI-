@@ -1,0 +1,21 @@
+# M14 咨询助手工具选择：断言首个工具（售前→产品工具，售后→知识库）
+{"id": "ad-01", "input": {"question": "有没有 380V 的小功率变频器推荐？"}, "expect": {"tool": "search_products"}}
+{"id": "ad-02", "input": {"question": "客户要选一台载重 1 吨以上的 AGV，有什么型号？"}, "expect": {"tool": "search_products"}}
+{"id": "ad-03", "input": {"question": "VFD-750B 的额定功率是多少？"}, "expect": {"tool": "get_product_detail", "args_contains": {"model_no": "VFD-750B"}}}
+{"id": "ad-04", "input": {"question": "SG-2000 这个伺服电机支持什么编码器？"}, "expect": {"tool": "get_product_detail", "args_contains": {"model_no": "SG-2000"}}}
+{"id": "ad-05", "input": {"question": "VFD-750B 和 VFD-1500B 有什么区别？"}, "expect": {"tool": "compare_products"}}
+{"id": "ad-06", "input": {"question": "帮我对比一下 UPS-6K 和 UPS-6K-G2，客户在纠结选哪个"}, "expect": {"tool": "compare_products"}}
+{"id": "ad-07", "input": {"question": "设备开机报 E03 错误怎么处理？"}, "expect": {"tool": "search_knowledge"}}
+{"id": "ad-08", "input": {"question": "变频器运行中突然停机，面板显示过流，怎么排查？"}, "expect": {"tool": "search_knowledge"}}
+{"id": "ad-09", "input": {"question": "这台泵多久需要保养一次？保养要做什么？"}, "expect": {"tool": "search_knowledge"}}
+{"id": "ad-10", "input": {"question": "客户问伺服电机异响是什么原因"}, "expect": {"tool": "search_knowledge"}}
+{"id": "ad-11", "input": {"question": "给餐饮客户推荐一台商用咖啡机"}, "expect": {"tool": "search_products"}}
+{"id": "ad-12", "input": {"question": "IPC-1517T 工业平板支持宽温吗？"}, "expect": {"tool": "get_product_detail", "args_contains": {"model_no": "IPC-1517T"}}}
+{"id": "ad-13", "input": {"question": "客户用的老型号 OLD-100 停产了，想引导他换新款 NEW-200，帮我看看这两个型号差多少"}, "expect": {"tool_in": ["compare_products", "get_product_detail"]}}
+{"id": "ad-14", "input": {"question": "UPS 电池充不进电，客户很着急"}, "expect": {"tool": "search_knowledge"}}
+{"id": "ad-15", "input": {"question": "我们有耐高温的传感器吗？客户车间温度 80 度"}, "expect": {"tool": "search_products"}}
+{"id": "ad-16", "input": {"question": "GEN-50S 发电机的油箱多大？满载能跑多久？"}, "expect": {"tool": "get_product_detail", "args_contains": {"model_no": "GEN-50S"}}}
+{"id": "ad-17", "input": {"question": "客户问设备安装后怎么做首次调试"}, "expect": {"tool": "search_knowledge"}}
+{"id": "ad-18", "input": {"question": "找一款防护等级 IP67 以上的相机"}, "expect": {"tool": "search_products"}}
+{"id": "ad-19", "input": {"question": "3D 打印机喷头堵了怎么清理？"}, "expect": {"tool": "search_knowledge"}}
+{"id": "ad-20", "input": {"question": "把 CAM-A、CAM-B、CAM-C 三款相机放一起比一下参数"}, "expect": {"tool": "compare_products"}}

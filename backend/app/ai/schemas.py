@@ -91,3 +91,31 @@ class PerformanceInsightOutput(BaseModel):
     summary: str = Field(min_length=1, description="一段话总结本月表现（引用关键数字）")
     findings: list[str] = Field(min_length=1, max_length=5, description="归因发现，须引用输入数字")
     suggestions: list[str] = Field(min_length=1, max_length=4, description="下月行动建议")
+
+
+class ProductExtractOutput(BaseModel):
+    """规格书结构化抽取（M13）。只收原文出现的信息；未提及的字段填「未提及」，禁止编造。"""
+
+    model_no: str = Field(min_length=1, description="产品型号，未提及填「未提及」")
+    name: str = Field(min_length=1, description="产品名称，未提及可用型号+品类概括")
+    brand: str = Field(min_length=1, description="品牌/厂商，未提及填「未提及」")
+    category: str = Field(min_length=1, description="产品品类（简短中文，如：变频器/伺服电机）")
+    specs: dict[str, str] = Field(
+        description="参数键值对（参数名→原文值，保留单位），只收原文明确出现的参数"
+    )
+    description: str = Field(min_length=1, description="一两句产品概述（基于原文）")
+    confidence_note: str = Field(
+        min_length=1, description="抽取置信说明，注明哪些关键信息原文未提及"
+    )
+
+
+class ProductCompareOutput(BaseModel):
+    """产品对比差异总结（M13）。只引用对比矩阵中的真实参数值。"""
+
+    summary: str = Field(min_length=1, description="一段话总结核心差异")
+    key_differences: list[str] = Field(
+        min_length=1, max_length=6, description="关键差异点，须引用矩阵中的参数值"
+    )
+    recommendation: str = Field(
+        min_length=1, description="选型建议（按不同使用场景给方向，不武断）"
+    )

@@ -14,6 +14,7 @@ from app.models.lead import Lead
 from app.models.llm_call import LlmCall
 from app.models.notification import Notification
 from app.models.opportunity import Opportunity
+from app.models.product import Product
 from app.models.script import Script
 from app.models.team import Team
 from app.models.user import User
@@ -34,6 +35,7 @@ __all__ = [
     "LlmCall",
     "Notification",
     "Opportunity",
+    "Product",
     "Script",
     "Team",
     "User",

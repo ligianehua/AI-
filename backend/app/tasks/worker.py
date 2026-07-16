@@ -13,6 +13,7 @@ from app.tasks.contract import process_contract_task
 from app.tasks.discovery import run_discovery_task
 from app.tasks.embedding import embed_knowledge_doc_task, embed_script_task
 from app.tasks.forecast import forecast_snapshot_task
+from app.tasks.product import embed_product_task, extract_product_task
 from app.tasks.profile import account_profile_task
 from app.tasks.risk_scan import risk_scan_task
 from app.tasks.scoring import score_lead_task
@@ -40,6 +41,8 @@ class WorkerSettings:
         run_discovery_task,
         process_contract_task,
         forecast_snapshot_task,
+        extract_product_task,
+        embed_product_task,
     ]
     # ARQ cron 按 UTC 计时：默认 hour=0 即北京时间 08:00（RISK_SCAN_HOUR_UTC 可调）
     cron_jobs = [

@@ -505,7 +505,90 @@ POST /api/v1/analytics/insight                     LLM 归因解读（同步，s
 - [ ] 前端业绩页：指标卡本月/上月对比 + AI 解读
 - [ ] make lint && make test && make eval 全绿
 
-## 7. （P1 规格已全部细化，见 §6.6–§6.10）
+### 6.11 AI 产品分析助手（M13）
+
+**用户故事**：销售/售前把规格书扔进系统，参数自动变成结构化产品档案；要选型时用一句话
+筛出候选，点两下拿到参数对比表；老型号停产时一键找出库里的在售替代——不再人工翻规格书，
+不再重复造轮子。
+
+数据（迁移 0007，产品库是公司公共资产：全员可读，admin/manager 可管理）：
+```
+products
+  id, model_no（型号，部分唯一 where not deleted）, name, brand, category,
+  status(active|eol|draft),   # eol=停产（替代挖掘的重点对象）
+  specs jsonb,                # 参数键值对（LLM 抽取或手动维护）
+  description text, source_doc_name,
+  embedding vector(1024),     # 型号+名称+参数 语义向量
+  created_by
+```
+
+API：
+```
+POST   /api/v1/products                    手动创建（admin/manager）
+GET    /api/v1/products?status=&category=&keyword=   列表（全员）
+GET    /api/v1/products/{id}               详情
+PATCH  /api/v1/products/{id}               编辑（含改 status 标停产）
+DELETE /api/v1/products/{id}               软删
+POST   /api/v1/products/upload-spec        上传规格书（txt/md/docx）→ 异步抽取入库
+POST   /api/v1/products/search             自然语言混合检索（向量+关键词）
+POST   /api/v1/products/compare            body {product_ids: 2-4} → 参数对齐表 + LLM 差异总结
+GET    /api/v1/products/{id}/alternatives  替代推荐（向量相似 top5，EOL 型号优先推在售替代）
+```
+
+**抽取管线**（异步任务）：extract_text → LLM 结构化抽取
+`{model_no, name, brand, category, specs{参数名:值}, description, confidence_note}`
+（fast 档；原文未提及的字段填「未提及」，specs 只收原文出现的参数，禁止编造）→
+按 model_no 幂等 upsert → 嵌入（model_no+name+specs 拼接文本）。
+
+**对比**：后端对齐 spec keys 生成矩阵（代码），LLM 生成
+`{summary, key_differences[], recommendation}`（strong 档，只引用矩阵中的参数值）。
+
+**替代挖掘**：pgvector 余弦相似 top5（排除自身与软删）；目标产品为 EOL 时默认只推
+active 替代（可放开）；每条附相似度与关键参数差异。
+
+`LlmTaskType` 追加 product_extract / product_compare。
+
+验收标准：
+- [ ] 上传规格书 → 结构化参数入库（未提及不编造，eval ≥20 条验证）
+- [ ] 同型号重复上传幂等更新，不重复建档
+- [ ] 自然语言检索命中目标产品（中文查询可召回英文规格）
+- [ ] 对比表参数对齐正确；LLM 总结只引用真实参数（eval 验证）
+- [ ] EOL 型号的替代推荐只返回在售产品，附相似度
+- [ ] 全员可读、非管理角色不可写（RBAC 测试）；make lint && make test && make eval 全绿
+
+### 6.12 AI 产品咨询助手（M14）
+
+**用户故事**：客户问"你们这型号和 X 比有什么优势？""这设备报错 E03 怎么处理？"——销售
+把问题丢给咨询助手，售前问题拿到带参数依据的卖点回答，售后问题拿到基于运维手册的排查步骤，
+直接转发客户。虚拟销售专家 + 智能运维助手双角色。
+
+API：
+```
+POST /api/v1/product-advisor/chat   body: { message, history ≤10 轮 }
+     → SSE：tool {name, label} → delta {text} → done → error（协议同 M9 助手）
+```
+
+**实现**：复用 M9 chat_tools 循环框架（上限 5 轮），独立工具集与 system prompt：
+| 工具 | 用途 |
+|---|---|
+| search_products | 按需求/参数找产品（售前选型） |
+| get_product_detail | 型号完整参数（回答参数类问题） |
+| compare_products | 与竞品/其他型号对比（卖点提炼） |
+| search_knowledge | 知识库 RAG（FAQ/运维手册/案例——售后排查的依据） |
+
+**双角色 prompt 铁律**：售前角色——基于真实参数讲卖点，参数库里没有的不承诺；售后角色——
+排查步骤必须来自知识库检索结果，查不到就建议转人工工程师，禁止编造操作步骤（安全红线）；
+自动按问题类型切换角色；用户要求英文时输出英文（便于直接转发客户）。
+
+`LlmTaskType` 追加 product_advisor；`llm_calls` 记账与日限额沿用。
+
+验收标准：
+- [ ] 售前问题（选型/对比/参数）→ 调产品工具 → 回答引用真实参数
+- [ ] 售后问题 → 调知识库 → 知识库无据时明确说"建议转人工"而非编造步骤
+- [ ] 工具选择 eval ≥20 条；SSE 事件序列与容错测试（复用 M9 测试模式）
+- [ ] 全员可用（产品库公共读）；make lint && make test && make eval 全绿
+
+## 7. （P1 规格已全部细化，见 §6.6–§6.12）
 
 ## 8. 里程碑与执行顺序
 
@@ -526,6 +609,8 @@ POST /api/v1/analytics/insight                     LLM 归因解读（同步，s
 | M10 | 合同处理 | §6.8 前后端：上传抽取审查 + 模板生成 | §6.8 验收清单全过 |
 | M11 | 销售预测 | §6.9 前后端：加权 pipeline + 周度快照 + 外推守卫 | §6.9 验收清单全过 |
 | M12 | 业绩分析 | §6.10 前后端：月度指标对比 + AI 归因解读 | §6.10 验收清单全过 |
+| M13 | AI 产品分析助手 | §6.11 前后端：产品库 + 规格抽取 + 对比 + 替代挖掘 | §6.11 验收清单全过 |
+| M14 | AI 产品咨询助手 | §6.12 前后端：双角色产品咨询对话 | §6.12 验收清单全过 |
 
 ## 9. 目录结构
 

@@ -993,6 +993,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 产品列表（全员可读） */
+        get: operations["list_products_api_v1_products_get"];
+        put?: never;
+        /** 手动创建产品（admin/manager） */
+        post: operations["create_product_api_v1_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/upload-spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 上传规格书（异步抽取入库，admin/manager） */
+        post: operations["upload_spec_api_v1_products_upload_spec_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 自然语言检索（向量+关键词混合） */
+        post: operations["search_products_api_v1_products_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 参数对比（对齐矩阵 + AI 差异总结） */
+        post: operations["compare_products_api_v1_products_compare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 产品详情 */
+        get: operations["get_product_api_v1_products__product_id__get"];
+        put?: never;
+        post?: never;
+        /** 删除产品（admin/manager，软删） */
+        delete: operations["delete_product_api_v1_products__product_id__delete"];
+        options?: never;
+        head?: never;
+        /** 编辑产品（admin/manager，改参数自动重嵌入） */
+        patch: operations["update_product_api_v1_products__product_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/alternatives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 替代推荐（EOL 默认只推在售） */
+        get: operations["find_alternatives_api_v1_products__product_id__alternatives_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-advisor/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 产品咨询对话（售前专家/售后运维双角色，SSE） */
+        post: operations["chat_api_v1_product_advisor_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1214,6 +1336,11 @@ export interface components {
         };
         /** Body_upload_doc_api_v1_knowledge_docs_post */
         Body_upload_doc_api_v1_knowledge_docs_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_spec_api_v1_products_upload_spec_post */
+        Body_upload_spec_api_v1_products_upload_spec_post: {
             /** File */
             file: string;
         };
@@ -1898,6 +2025,17 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
+        /** PageResult[ProductOut] */
+        PageResult_ProductOut_: {
+            /** Items */
+            items: components["schemas"]["ProductOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /** PageResult[ScriptOut] */
         PageResult_ScriptOut_: {
             /** Items */
@@ -1981,6 +2119,101 @@ export interface components {
             model: string;
             /** Latency Ms */
             latency_ms: number;
+        };
+        /** ProductCompareRequest */
+        ProductCompareRequest: {
+            /** Product Ids */
+            product_ids: string[];
+        };
+        /** ProductCreate */
+        ProductCreate: {
+            /** Model No */
+            model_no: string;
+            /** Name */
+            name: string;
+            /** Brand */
+            brand?: string | null;
+            /** Category */
+            category?: string | null;
+            /** @default active */
+            status: components["schemas"]["ProductStatus"];
+            /** Specs */
+            specs?: {
+                [key: string]: string;
+            };
+            /** Description */
+            description?: string | null;
+        };
+        /** ProductOut */
+        ProductOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Model No */
+            model_no: string;
+            /** Name */
+            name: string;
+            /** Brand */
+            brand: string | null;
+            /** Category */
+            category: string | null;
+            status: components["schemas"]["ProductStatus"];
+            /** Specs */
+            specs: {
+                [key: string]: unknown;
+            };
+            /** Description */
+            description: string | null;
+            /** Source Doc Name */
+            source_doc_name: string | null;
+            /** Has Embedding */
+            has_embedding: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ProductSearchHit */
+        ProductSearchHit: {
+            product: components["schemas"]["ProductOut"];
+            /** Score */
+            score: number;
+        };
+        /** ProductSearchRequest */
+        ProductSearchRequest: {
+            /** Query */
+            query: string;
+            /**
+             * Top K
+             * @default 5
+             */
+            top_k: number;
+        };
+        /**
+         * ProductStatus
+         * @enum {string}
+         */
+        ProductStatus: "active" | "eol" | "draft";
+        /** ProductUpdate */
+        ProductUpdate: {
+            /** Model No */
+            model_no?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Brand */
+            brand?: string | null;
+            /** Category */
+            category?: string | null;
+            status?: components["schemas"]["ProductStatus"] | null;
+            /** Specs */
+            specs?: {
+                [key: string]: string;
+            } | null;
+            /** Description */
+            description?: string | null;
         };
         /** RecommendRequest */
         RecommendRequest: {
@@ -4681,6 +4914,340 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PerformanceInsightOutput"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_api_v1_products_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["ProductStatus"] | null;
+                category?: string | null;
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResult_ProductOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_product_api_v1_products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_spec_api_v1_products_upload_spec_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_spec_api_v1_products_upload_spec_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_products_api_v1_products_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductSearchHit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_products_api_v1_products_compare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCompareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_product_api_v1_products__product_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_product_api_v1_products__product_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_product_api_v1_products__product_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_alternatives_api_v1_products__product_id__alternatives_get: {
+        parameters: {
+            query?: {
+                include_eol?: boolean;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_api_v1_product_advisor_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

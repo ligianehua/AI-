@@ -35,7 +35,7 @@ os.environ["DEEPSEEK_API_KEY"] = "unit-test-key"
 os.environ["DASHSCOPE_API_KEY"] = "unit-test-key"
 
 _TABLES = (
-    "notifications, llm_calls, knowledge_chunks, knowledge_docs, scripts, "
+    "notifications, llm_calls, knowledge_chunks, knowledge_docs, scripts, products, "
     "discovery_candidates, discovery_subscriptions, contracts, forecast_snapshots, "
     "activities, leads, contacts, opportunities, accounts, users, teams"
 )

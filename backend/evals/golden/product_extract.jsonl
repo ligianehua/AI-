@@ -1,0 +1,21 @@
+# 规格书抽取：expect 字段为"应包含的子串"；spec_has=[参数名]（specs 必须含这些键）；spec_absent=[参数名]（禁止编造出现）
+{"id": "pe-01", "input": {"text": "DeltaTech VFD-750B 通用变频器产品规格。额定功率：750W；输入电压：三相 380V±10%；输出频率：0-400Hz；防护等级：IP20；工作温度：-10℃~50℃。适用于小型风机、水泵调速。"}, "expect": {"model_no": "VFD-750B", "brand": "Delta", "spec_has": ["额定功率", "防护等级"], "spec_absent": ["价格"]}}
+{"id": "pe-02", "input": {"text": "SG-2000 伺服电机规格书（厂商：SinoDrive）。额定转矩 6.37N·m，额定转速 3000rpm，编码器 23bit 绝对值，法兰尺寸 80mm。"}, "expect": {"model_no": "SG-2000", "brand": "SinoDrive", "spec_has": ["额定转矩", "额定转速"]}}
+{"id": "pe-03", "input": {"text": "产品名称：工业平板电脑。型号 IPC-1517T。处理器 Intel i5-1135G7，内存 16GB DDR4，存储 512GB SSD，屏幕 15.6 英寸电容触摸，宽温 -20~60℃。"}, "expect": {"model_no": "IPC-1517T", "brand": "未提及", "spec_has": ["处理器", "内存"]}}
+{"id": "pe-04", "input": {"text": "本产品为不锈钢离心泵，扬程 32m，流量 12.5m³/h，电机功率 2.2kW，口径 DN50，材质 304 不锈钢。（未标注具体型号，以铭牌为准）"}, "expect": {"model_no": "未提及", "spec_has": ["扬程", "流量"]}}
+{"id": "pe-05", "input": {"text": "Model: PLC-S7X. Brand: LogicWare. Digital I/O: 24 inputs / 16 outputs. Program memory: 150KB. Communication: 2x Ethernet, 1x RS485. Supply voltage: 24VDC. Operating temp: 0-55C."}, "expect": {"model_no": "PLC-S7X", "brand": "LogicWare", "spec_has": ["Supply voltage"]}}
+{"id": "pe-06", "input": {"text": "TCS-350 温控传感器：测温范围 -50~350℃，精度 ±0.5%FS，输出 4-20mA，防护 IP67，螺纹 M12。制造商：恒温科技。"}, "expect": {"model_no": "TCS-350", "brand": "恒温", "spec_has": ["精度", "输出"]}}
+{"id": "pe-07", "input": {"text": "冷水机组 CW-30HP 技术参数：制冷量 30HP（约 88kW），压缩机 谷轮涡旋式 ×2，冷媒 R407C，水箱容量 420L，电源 380V/3P/50Hz。品牌：冰川制冷。"}, "expect": {"model_no": "CW-30HP", "brand": "冰川", "spec_has": ["制冷量", "冷媒"]}}
+{"id": "pe-08", "input": {"text": "AGV 激光导航叉车 LF-1500：额定载重 1500kg，举升高度 3m，导航方式 激光 SLAM，续航 8h，充电时间 1.5h（快充）。"}, "expect": {"model_no": "LF-1500", "brand": "未提及", "spec_has": ["额定载重", "导航方式"]}}
+{"id": "pe-09", "input": {"text": "UPS 不间断电源，型号 UPS-10KVA-R，在线双变换，容量 10kVA/9kW，后备时间 15 分钟（满载），电池 12V9Ah×20，机架式 3U。厂家：绿能电气。"}, "expect": {"model_no": "UPS-10KVA-R", "brand": "绿能", "spec_has": ["容量", "后备时间"]}}
+{"id": "pe-10", "input": {"text": "高速贴片机 SMT-88Pro（速度旗舰版）：贴装速度 88000CPH，贴装精度 ±25μm，支持元件 0201~55mm，供料位 120 站。品牌 QuickMount。"}, "expect": {"model_no": "SMT-88Pro", "brand": "QuickMount", "spec_has": ["贴装速度", "贴装精度"]}}
+{"id": "pe-11", "input": {"text": "空压机 AC-75VSD 变频螺杆式：排气量 13.5m³/min，工作压力 8bar，电机 75kW IP55，噪音 ≤72dB(A)，变频节能 30%。西风压缩机出品。"}, "expect": {"model_no": "AC-75VSD", "brand": "西风", "spec_has": ["排气量", "工作压力"]}}
+{"id": "pe-12", "input": {"text": "Vision camera VC-500M. Resolution: 5MP (2448x2048). Frame rate: 24fps. Sensor: Sony IMX264 CMOS 2/3\". Interface: GigE Vision. Lens mount: C-mount."}, "expect": {"model_no": "VC-500M", "brand": "未提及", "spec_has": ["Resolution", "Interface"]}}
+{"id": "pe-13", "input": {"text": "焊接机器人 WR-6A：6 轴，臂展 1440mm，负载 6kg，重复定位精度 ±0.08mm，防护 IP54（手腕 IP67）。配套焊机需另购。制造：华臂机器人。"}, "expect": {"model_no": "WR-6A", "brand": "华臂", "spec_has": ["臂展", "负载"], "spec_absent": ["价格"]}}
+{"id": "pe-14", "input": {"text": "锂电池组 LFP-48100：磷酸铁锂，标称电压 51.2V，容量 100Ah，循环寿命 ≥6000 次（80% DOD），BMS 内置，通信 CAN/RS485。"}, "expect": {"model_no": "LFP-48100", "spec_has": ["标称电压", "容量", "循环寿命"]}}
+{"id": "pe-15", "input": {"text": "工业除湿机规格：型号 DH-480L，日除湿量 480L/D，适用面积 500-700㎡，风量 5000m³/h，制冷剂 R410A，电源 380V。品牌：干爽环境设备。"}, "expect": {"model_no": "DH-480L", "brand": "干爽", "spec_has": ["日除湿量", "风量"]}}
+{"id": "pe-16", "input": {"text": "3D 打印机 FDM-600Pro：成型尺寸 600×600×800mm，喷头温度 ≤350℃，热床 ≤120℃，层厚 0.05-0.4mm，双喷头，断电续打。"}, "expect": {"model_no": "FDM-600Pro", "brand": "未提及", "spec_has": ["成型尺寸", "层厚"]}}
+{"id": "pe-17", "input": {"text": "GateScan X1 安检门（品牌 SecurePass）：探测区位 18 区，灵敏度 100 级可调，通过率 60 人/分钟，报警方式 声光+区位指示，防护等级 IP55（户外型）。"}, "expect": {"model_no": "X1", "brand": "SecurePass", "spec_has": ["灵敏度", "通过率"]}}
+{"id": "pe-18", "input": {"text": "静音发电机组 GEN-50S：额定功率 50kVA/40kW，发动机 玉柴 YC4D90Z，噪音 ≤68dB@7m，油箱 120L，持续运行 10h（满载）。"}, "expect": {"model_no": "GEN-50S", "spec_has": ["额定功率", "噪音"]}}
+{"id": "pe-19", "input": {"text": "净化车间 FFU 风机过滤单元 FFU-1175：尺寸 1175×575×320mm，风量 1000-1400m³/h 可调，过滤效率 H14（99.995%@0.3μm），噪音 ≤52dB。洁净星制造。"}, "expect": {"model_no": "FFU-1175", "brand": "洁净星", "spec_has": ["过滤效率", "风量"]}}
+{"id": "pe-20", "input": {"text": "商用咖啡机 CM-Duo2 双头半自动：锅炉 11L 铜锅炉，泵压 9bar，功率 3200W，电压 220V，出品头 2 组，PID 温控 ±0.5℃。意曼咖啡设备（东莞）有限公司。"}, "expect": {"model_no": "CM-Duo2", "spec_has": ["泵压", "功率"]}}

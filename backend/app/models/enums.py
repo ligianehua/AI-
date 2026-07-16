@@ -96,6 +96,12 @@ class ContractStatus(StrEnum):
     FAILED = "failed"
 
 
+class ProductStatus(StrEnum):
+    ACTIVE = "active"  # 在售
+    EOL = "eol"  # 停产（替代挖掘的重点对象）
+    DRAFT = "draft"  # 草稿（抽取入库待人工确认）
+
+
 class LlmTaskType(StrEnum):
     PING = "ping"  # 冒烟
     LEAD_SCORING = "lead_scoring"
@@ -106,6 +112,9 @@ class LlmTaskType(StrEnum):
     CONTRACT_EXTRACT = "contract_extract"  # M10 合同要素抽取
     CONTRACT_REVIEW = "contract_review"  # M10 合同风险审查
     PERFORMANCE_INSIGHT = "performance_insight"  # M12 业绩归因解读
+    PRODUCT_EXTRACT = "product_extract"  # M13 规格书结构化抽取
+    PRODUCT_COMPARE = "product_compare"  # M13 产品对比差异总结
+    PRODUCT_ADVISOR = "product_advisor"  # M14 产品咨询对话
     EMBEDDING = "embedding"
 
 

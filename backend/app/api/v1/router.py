@@ -16,6 +16,8 @@ from app.api.v1 import (
     leads,
     notifications,
     opportunities,
+    product_advisor,
+    products,
     scripts,
     teams,
     users,
@@ -40,3 +42,5 @@ api_router.include_router(assistant.router)
 api_router.include_router(contracts.router)
 api_router.include_router(forecast.router)
 api_router.include_router(analytics.router)
+api_router.include_router(products.router)
+api_router.include_router(product_advisor.router)

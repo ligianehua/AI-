@@ -18,6 +18,8 @@ const NAV_ITEMS = [
   { href: "/accounts", label: "客户" },
   { href: "/opportunities", label: "商机" },
   { href: "/scripts", label: "话术" },
+  { href: "/products", label: "产品库" },
+  { href: "/product-advisor", label: "产品咨询" },
   { href: "/contracts", label: "合同" },
   { href: "/forecast", label: "预测" },
   { href: "/analytics", label: "业绩" },

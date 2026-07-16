@@ -31,6 +31,7 @@ def _task_registry() -> dict[str, Any]:
     from app.tasks.discovery import run_discovery_task
     from app.tasks.embedding import embed_knowledge_doc_task, embed_script_task
     from app.tasks.forecast import forecast_snapshot_task
+    from app.tasks.product import embed_product_task, extract_product_task
     from app.tasks.profile import account_profile_task
     from app.tasks.risk_scan import risk_scan_task
     from app.tasks.scoring import score_lead_task
@@ -44,6 +45,8 @@ def _task_registry() -> dict[str, Any]:
         "run_discovery_task": run_discovery_task,
         "process_contract_task": process_contract_task,
         "forecast_snapshot_task": forecast_snapshot_task,
+        "extract_product_task": extract_product_task,
+        "embed_product_task": embed_product_task,
     }
 
 

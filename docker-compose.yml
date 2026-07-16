@@ -89,8 +89,25 @@ services:
       - backend
     command: npm run dev
 
+  # M15 售后中心：独立子系统（dev 模式同样以容器方式运行）
+  aftersales:
+    build: ./aftersales
+    env_file:
+      - .env
+    environment:
+      OPENAI_API_KEY: ${AFTERSALES_API_KEY:-}
+      OPENAI_BASE_URL: https://api.silra.cn/v1
+      MODEL: qwen3-max
+      MOCK_MODE: auto
+      CHANNEL_API_KEY: ${AFTERSALES_CHANNEL_KEY:-}
+    volumes:
+      - aftersales-data:/app/data
+    ports:
+      - "8100:8000"
+
 volumes:
   pgdata:
   backend-venv:
   frontend-node-modules:
   frontend-next:
+  aftersales-data:

@@ -86,13 +86,31 @@ services:
       args:
         # 浏览器访问后端的地址（与 .env.example 同名变量，构建期内联）
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_AFTERSALES_URL: ${NEXT_PUBLIC_AFTERSALES_URL:-http://localhost:8100}
     ports:
       - "3000:3000"
     depends_on:
       - backend
     restart: unless-stopped
 
+  # M15 售后中心：独立子系统（SQLite + 自带前端），走 OpenAI 兼容接口复用 silra 网关
+  aftersales:
+    build: ./aftersales
+    environment:
+      OPENAI_API_KEY: ${AFTERSALES_API_KEY:-}
+      OPENAI_BASE_URL: https://api.silra.cn/v1
+      MODEL: qwen3-max
+      MOCK_MODE: auto
+      CHANNEL_API_KEY: ${AFTERSALES_CHANNEL_KEY:-}
+      AUTO_ANALYZE_HOURS: "6"
+    volumes:
+      - aftersales-data:/app/data
+    ports:
+      - "8100:8000"
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:
   uploads:
+  aftersales-data:

@@ -26,6 +26,9 @@ const NAV_ITEMS = [
   { href: "/assistant", label: "助手" },
 ];
 
+// M15 售后中心：独立子系统（自带客户聊天页与管理控制台），新窗口打开
+const AFTERSALES_URL = process.env.NEXT_PUBLIC_AFTERSALES_URL ?? "http://localhost:8100";
+
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -68,6 +71,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 {item.label}
               </Link>
             ))}
+            <a
+              href={`${AFTERSALES_URL}/admin`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
+              title="售后中心（独立子系统，新窗口打开）"
+            >
+              售后中心 ↗
+            </a>
           </nav>
           <NotificationBell />
           <Button variant="ghost" size="sm" onClick={handleLogout}>

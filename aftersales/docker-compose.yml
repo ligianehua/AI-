@@ -1,0 +1,17 @@
+services:
+  ai-aftersales:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data          # SQLite 数据库与上传文件持久化
+    environment:
+      # 二选一配置真实 API；都留空则演示模式
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - MODEL=${MODEL:-}
+      - MOCK_MODE=${MOCK_MODE:-auto}
+      - CHANNEL_API_KEY=${CHANNEL_API_KEY:-}
+      - AUTO_ANALYZE_HOURS=${AUTO_ANALYZE_HOURS:-6}
+    restart: unless-stopped

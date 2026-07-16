@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理控制台 · AI售后助手</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/vendor/vue.global.prod.js"
+          onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/vue@3/dist/vue.global.prod.js';document.head.appendChild(s)"></script>
+  <script src="/static/vendor/echarts.min.js"
+          onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js';document.head.appendChild(s)"></script>
+</head>
+<body>
+<div id="app" v-cloak>
+  <!-- 员工登录遮罩 -->
+  <div v-if="!me" class="modal-mask" style="background:#f5f7fa">
+    <div class="modal" style="width:400px;text-align:center">
+      <div style="font-size:40px;margin-bottom:8px">🛠️</div>
+      <h3 style="margin-bottom:4px">AI售后助手 · 管理控制台</h3>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:18px">员工登录</p>
+      <div class="form-row" style="text-align:left"><label>用户名</label>
+        <input v-model="loginUser" @keydown.enter="login"></div>
+      <div class="form-row" style="text-align:left"><label>密码</label>
+        <input v-model="loginPass" type="password" @keydown.enter="login"></div>
+      <button class="btn primary" style="width:100%;padding:10px" @click="login">登录</button>
+      <div v-if="loginError" style="color:#dc2626;font-size:13px;margin-top:10px">{{ loginError }}</div>
+      <div v-if="demoStaff.length" style="margin-top:16px;text-align:left">
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:6px">演示账号（点击填入）：</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <button v-for="s in demoStaff" :key="s.username" class="chip"
+                  @click="loginUser = s.username; loginPass = s.password">
+            {{ s.role_name }} {{ s.username }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <template v-if="me">
+  <div class="topbar">
+    <div class="logo">🛠️ AI售后助手 · 管理控制台</div>
+    <span class="mode-badge" :class="{real: !mode.mock}">{{ mode.mock ? '演示模式' : '真实API · ' + mode.model }}</span>
+    <div class="spacer"></div>
+    <span style="font-size:13px;color:#374151">{{ me.name }} · <span class="tag blue">{{ me.role_name }}</span></span>
+    <button class="btn sm" @click="logout">退出</button>
+    <a class="btn sm" href="/" target="_blank">客户聊天页 →</a>
+  </div>
+
+  <div class="admin-layout">
+    <div class="admin-nav">
+      <div v-for="t in visibleTabs" :key="t.key" class="nav-item" :class="{active: tab === t.key}"
+           @click="switchTab(t.key)">{{ t.icon }} {{ t.name }}</div>
+    </div>
+
+    <div class="admin-main">
+      <!-- ①数据分析 -->
+      <div v-show="tab === 'dashboard'">
+        <div class="page-title">📊 数据分析仪表盘
+          <button class="btn sm" @click="loadDashboard">刷新</button></div>
+        <div class="metric-grid">
+          <div class="metric"><div class="m-label">今日会话</div>
+            <div class="m-value">{{ ov.today_conversations ?? '-' }}</div></div>
+          <div class="metric"><div class="m-label">累计会话</div>
+            <div class="m-value">{{ ov.total_conversations ?? '-' }}</div></div>
+          <div class="metric"><div class="m-label">AI自助解决率</div>
+            <div class="m-value">{{ ov.ai_self_resolve_rate ?? '-' }}<span class="m-unit">%</span></div></div>
+          <div class="metric"><div class="m-label">转人工率</div>
+            <div class="m-value">{{ ov.handoff_rate ?? '-' }}<span class="m-unit">%</span></div></div>
+          <div class="metric"><div class="m-label">未结工单</div>
+            <div class="m-value">{{ ov.open_tickets ?? '-' }}</div></div>
+          <div class="metric"><div class="m-label">进行中售后</div>
+            <div class="m-value">{{ ov.active_rma ?? '-' }}</div></div>
+          <div class="metric"><div class="m-label">平均满意度</div>
+            <div class="m-value">{{ ov.avg_satisfaction ?? '-' }}<span class="m-unit">/5</span></div></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-box"><h4>近30天 会话/工单趋势</h4><div id="chart-trend" class="chart"></div></div>
+          <div class="chart-box"><h4>热点问题 Top10（近30天）</h4><div id="chart-hot" class="chart"></div></div>
+          <div class="chart-box"><h4>工单分类占比</h4><div id="chart-cat" class="chart"></div></div>
+          <div class="chart-box"><h4>满意度</h4><div id="chart-sat" class="chart"></div></div>
+        </div>
+      </div>
+
+      <!-- ①b 人工工作台 -->
+      <div v-show="tab === 'workbench'" style="height:100%">
+        <div class="page-title">🎧 人工客服工作台
+          <span class="tag orange" v-if="wbQueue.waiting.length">{{ wbQueue.waiting.length }} 个会话待接入</span>
+        </div>
+        <div style="display:flex;gap:14px;height:calc(100vh - 150px)">
+          <!-- 队列 -->
+          <div style="width:290px;flex-shrink:0;overflow-y:auto">
+            <div class="card" style="margin-bottom:12px;padding:12px">
+              <h4 style="font-size:13px;margin-bottom:8px;color:#ea580c">⏳ 待接入（{{ wbQueue.waiting.length }}）</h4>
+              <div v-for="c in wbQueue.waiting" :key="'w'+c.id" class="kanban-card p-高"
+                   @click="wbOpen(c)">
+                <div class="kc-title">{{ c.title }}</div>
+                <div class="kc-meta"><span>{{ c.customer_name }}（{{ c.customer_level }}）</span><span>{{ c.last_at }}</span></div>
+                <div style="font-size:12px;color:#9ca3af;margin-top:4px">{{ c.last_text }}</div>
+              </div>
+              <div v-if="!wbQueue.waiting.length" class="empty" style="padding:10px">暂无待接入会话</div>
+            </div>
+            <div class="card" style="padding:12px">
+              <h4 style="font-size:13px;margin-bottom:8px;color:#16a34a">💬 服务中（{{ wbQueue.serving.length }}）</h4>
+              <div v-for="c in wbQueue.serving" :key="'s'+c.id" class="kanban-card p-中"
+                   :style="{outline: wbConv && wbConv.id === c.id ? '2px solid #2563eb' : 'none'}"
+                   @click="wbOpen(c)">
+                <div class="kc-title">{{ c.title }}</div>
+                <div class="kc-meta"><span>{{ c.customer_name }}</span><span>{{ c.assigned_agent }}</span></div>
+              </div>
+              <div v-if="!wbQueue.serving.length" class="empty" style="padding:10px">暂无服务中会话</div>
+            </div>
+          </div>
+          <!-- 会话面板 -->
+          <div class="card" style="flex:1;display:flex;flex-direction:column;padding:0;min-width:0">
+            <div v-if="!wbConv" class="empty" style="padding-top:120px">从左侧选择一个会话开始服务</div>
+            <template v-else>
+              <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px">
+                <strong style="font-size:14px">#{{ wbConv.id }} {{ wbConv.title }}</strong>
+                <span class="tag" :class="{green: wbConv.mode === 'human'}">
+                  {{ wbConv.mode === 'human' ? '人工服务中 · ' + wbConv.assigned_agent : 'AI服务中' }}</span>
+                <div class="spacer" style="flex:1"></div>
+                <button v-if="wbConv.mode !== 'human'" class="btn sm primary" @click="wbTakeover">✋ 接管会话</button>
+                <template v-else>
+                  <button class="btn sm" @click="wbSuggest" :disabled="wbSuggesting">
+                    {{ wbSuggesting ? '生成中…' : '💡 AI推荐话术' }}</button>
+                  <button class="btn sm" @click="wbRelease">↩ 交还AI</button>
+                  <button class="btn sm danger" @click="wbFinish">结束会话</button>
+                </template>
+              </div>
+              <div style="flex:1;overflow-y:auto;padding:16px" ref="wbMsgList">
+                <template v-for="m in wbMessages" :key="m.id">
+                  <div v-if="m.role === 'notice'" style="text-align:center;margin:12px 0">
+                    <span style="font-size:12px;color:#9ca3af;background:#f3f4f6;border-radius:999px;padding:3px 12px">{{ m.text }}</span>
+                  </div>
+                  <div v-else class="msg-row" :class="m.role === 'user' ? '' : 'user'">
+                    <div class="avatar">{{ m.role === 'user' ? '🙂' : (m.agent_name ? '👩‍💼' : '🤖') }}</div>
+                    <div style="max-width:75%">
+                      <div style="font-size:11px;color:#9ca3af;margin-bottom:2px">
+                        {{ m.role === 'user' ? '客户' : (m.agent_name || 'AI助手') }} · {{ m.created_at }}</div>
+                      <img v-if="m.image" :src="m.image"
+                           style="max-width:180px;border-radius:8px;margin-bottom:4px;display:block;cursor:zoom-in"
+                           onclick="window.open(this.src)">
+                      <div class="bubble" style="background:#fff;color:#1f2937;border:1px solid #e5e7eb"
+                           v-html="renderText(m.text)"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <div v-if="wbConv.mode === 'human'" style="padding:12px;border-top:1px solid #e5e7eb;display:flex;gap:10px;align-items:flex-end">
+                <textarea v-model="wbDraft" rows="2" placeholder="输入回复…（Enter 发送）"
+                          style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:8px;resize:none;outline:none"
+                          @keydown.enter.exact.prevent="wbReply"></textarea>
+                <button class="btn primary" @click="wbReply" :disabled="!wbDraft.trim()">发送</button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- ②工单看板 -->
+      <div v-show="tab === 'tickets'">
+        <div class="page-title">🎫 工单看板
+          <button class="btn sm" @click="loadTickets">刷新</button>
+          <button class="btn sm" @click="downloadCsv('tickets')">⬇ 导出CSV</button>
+          <button class="btn sm primary" @click="ticketModal = {show: true, title: '', description: '', category: '其他', priority: '中', customer_id: customers[0] && customers[0].id}">＋ 新建工单</button>
+        </div>
+        <div class="kanban">
+          <div v-for="st in ticketStatuses" :key="st" class="kanban-col">
+            <h4>{{ st }} <span>{{ ticketsByStatus(st).length }}</span></h4>
+            <div v-for="t in ticketsByStatus(st)" :key="t.id" class="kanban-card"
+                 :class="'p-' + t.priority" @click="openTicket(t)">
+              <div class="kc-title">{{ t.title }}</div>
+              <div class="kc-meta"><span>{{ t.ticket_no }}</span><span>{{ t.customer_name }}</span></div>
+              <div class="kc-meta" style="margin-top:3px">
+                <span class="tag" :class="{orange: t.priority === '高', red: t.priority === '紧急'}">{{ t.priority }}</span>
+                <span>{{ t.category }}</span>
+              </div>
+              <div class="kc-actions" @click.stop>
+                <button v-for="ns in t.next_statuses" :key="ns" class="btn sm"
+                        @click="moveTicket(t, ns)">→ {{ ns }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③退换货 -->
+      <div v-show="tab === 'rma'">
+        <div class="page-title">📦 退换货管理
+          <button class="btn sm" @click="loadRma">刷新</button>
+          <button class="btn sm" @click="downloadCsv('rma')">⬇ 导出CSV</button>
+        </div>
+        <div class="filter-bar">
+          <select v-model="rmaFilter" @change="loadRma">
+            <option value="">全部状态</option>
+            <option v-for="s in rmaStatuses" :value="s">{{ s }}</option>
+          </select>
+        </div>
+        <table class="data">
+          <thead><tr><th>单号</th><th>类型</th><th>商品</th><th>客户</th><th>原因</th><th>状态</th><th>申请时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr v-for="r in rmas" :key="r.id">
+              <td><a href="#" @click.prevent="openRma(r)" style="color:#2563eb">{{ r.rma_no }}</a></td>
+              <td><span class="tag" :class="{red: r.type === '退货', blue: r.type === '换货', orange: r.type === '维修'}">{{ r.type }}</span></td>
+              <td>{{ r.product }}</td>
+              <td>{{ r.customer_name }}</td>
+              <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.reason }}</td>
+              <td><span class="tag" :class="{green: r.status === '已完成', red: r.status === '已驳回'}">{{ r.status }}</span></td>
+              <td>{{ r.created_at }}</td>
+              <td>
+                <button v-for="ns in r.next_statuses" :key="ns" class="btn sm"
+                        style="margin-right:4px" @click="moveRma(r, ns)">{{ ns }}</button>
+              </td>
+            </tr>
+            <tr v-if="!rmas.length"><td colspan="8" class="empty">暂无数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ④知识库 -->
+      <div v-show="tab === 'kb'">
+        <div class="page-title">📚 知识库管理
+          <button class="btn sm" @click="loadKb">刷新</button>
+          <button class="btn sm" @click="reindexKb">重建索引</button>
+          <button class="btn sm primary" @click="editKb(null)">＋ 新增条目</button>
+        </div>
+
+        <!-- 产品手册 -->
+        <div class="card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <strong>📖 产品手册</strong>
+            <span style="font-size:12px;color:#6b7280">上传后 AI 自动读取，回答客户问题时引用原文（支持 PDF / Word / TXT / MD）</span>
+            <div class="spacer" style="flex:1"></div>
+            <input type="file" ref="manualFile" accept=".pdf,.docx,.txt,.md,.markdown"
+                   style="display:none" @change="uploadManual">
+            <button class="btn sm primary" :disabled="manualUploading"
+                    @click="$refs.manualFile.click()">
+              {{ manualUploading ? '解析中…' : '⬆ 上传手册' }}</button>
+          </div>
+          <table class="data" v-if="manuals.length">
+            <thead><tr><th>手册</th><th>类型</th><th>知识块</th><th>字数</th><th>上传时间</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="m in manuals" :key="m.id">
+                <td>{{ m.title }}</td>
+                <td><span class="tag blue">{{ m.file_type.toUpperCase() }}</span></td>
+                <td>{{ m.chunk_count }}</td>
+                <td>{{ m.char_count }}</td>
+                <td>{{ m.created_at }}</td>
+                <td>
+                  <button class="btn sm" @click="digestManual(m)">🎓 消化为FAQ候选</button>
+                  <button class="btn sm" @click="previewManual(m)">预览</button>
+                  <button class="btn sm danger" @click="deleteManual(m)">删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty" style="padding:16px">暂无手册。上传后客户提问将自动检索手册内容。</div>
+        </div>
+        <div class="filter-bar">
+          <input v-model="kbQuery" placeholder="检索测试：输入客户问题，回车查看命中与得分" style="width:340px"
+                 @keydown.enter="loadKb">
+          <select v-model="kbCategory" @change="loadKb">
+            <option value="">全部分类</option>
+            <option v-for="c in kbCategories" :value="c">{{ c }}</option>
+          </select>
+          <select v-model="kbSource" @change="loadKb">
+            <option value="">全部来源</option>
+            <option value="seed">预置</option><option value="manual">人工</option><option value="learned">AI学习</option>
+          </select>
+          <span style="font-size:12px;color:#6b7280">共 {{ kbTotal }} 条</span>
+        </div>
+        <div v-if="kbSearchMode && kbManualHits.length" class="card" style="margin-bottom:14px;background:#fffdf5;border-color:#fde68a">
+          <strong style="font-size:13px">📖 手册命中（{{ kbManualHits.length }} 段）</strong>
+          <div v-for="(h, i) in kbManualHits" :key="i" style="margin-top:8px;font-size:13px">
+            <div style="color:#92400e">《{{ h.doc }}》<template v-if="h.section">· {{ h.section }}</template>
+              <span style="color:#b9a06a;margin-left:6px">得分 {{ h.score.toFixed(2) }}</span></div>
+            <div style="color:#6b7280;margin-top:2px;white-space:pre-wrap">{{ h.content.slice(0, 160) }}{{ h.content.length > 160 ? '…' : '' }}</div>
+          </div>
+        </div>
+        <table class="data">
+          <thead><tr><th>标题</th><th>分类</th><th>来源</th><th v-if="kbSearchMode">检索得分</th><th>命中次数</th><th>更新时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr v-for="e in kbItems" :key="e.id">
+              <td style="max-width:300px">{{ e.title }}</td>
+              <td><span class="tag blue">{{ e.category || '-' }}</span></td>
+              <td><span class="tag" :class="{purple: e.source === 'learned'}">
+                {{ {seed: '预置', manual: '人工', learned: '🎓 AI学习'}[e.source] || e.source }}</span></td>
+              <td v-if="kbSearchMode">{{ e.score != null ? e.score.toFixed(2) : '-' }}</td>
+              <td>{{ e.hit_count ?? '-' }}</td>
+              <td>{{ e.updated_at || '-' }}</td>
+              <td>
+                <button class="btn sm" @click="editKb(e)">编辑</button>
+                <button class="btn sm danger" @click="deleteKb(e)">删除</button>
+              </td>
+            </tr>
+            <tr v-if="!kbItems.length"><td colspan="7" class="empty">无匹配条目</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ⑤学习审核 -->
+      <div v-show="tab === 'learning'">
+        <div class="page-title">🎓 自我学习审核
+          <button class="btn sm primary" :disabled="analyzing" @click="startAnalysis">
+            {{ analyzing ? '分析中…' : '▶ 开始分析历史会话' }}</button>
+          <select v-model="candStatus" @change="loadCandidates"
+                  style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px">
+            <option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已驳回</option>
+          </select>
+        </div>
+        <div v-if="lastRun" class="card" style="margin-bottom:14px;font-size:13px;color:#6b7280">
+          最近分析批次 #{{ lastRun.id }}：{{ {running: '🔄 运行中', done: '✅ 完成', failed: '❌ 失败'}[lastRun.status] }}
+          <template v-if="lastRun.status === 'done'">
+            ，扫描 {{ lastRun.scanned }} 条会话，产出 {{ lastRun.created }} 个新候选
+          </template>
+          <span v-if="lastRun.error" style="color:#dc2626">{{ lastRun.error }}</span>
+        </div>
+        <div v-for="c in candidates" :key="c.id" class="cand-card" :class="{hot: c.type === 'hot_issue'}">
+          <div class="cand-head">
+            <span class="tag" :class="{orange: c.type === 'hot_issue', blue: c.type === 'faq', red: c.type === 'kb_gap'}">
+              {{ {faq: '新问答', kb_gap: '知识缺口', hot_issue: '🔥 热点问题'}[c.type] }}</span>
+            <span class="tag">{{ c.category }}</span>
+            <span class="tag" v-if="c.frequency > 1">出现 {{ c.frequency }} 次</span>
+            <span class="tag">置信度 {{ (c.confidence * 100).toFixed(0) }}%</span>
+            <span style="font-size:12px;color:#9ca3af">{{ c.created_at }}</span>
+            <a v-if="c.source_conversation_id" href="#" style="font-size:12px;color:#2563eb"
+               @click.prevent="viewConversation(c.source_conversation_id)">查看来源会话</a>
+          </div>
+          <div class="cand-q">Q：{{ c.question }}</div>
+          <div class="cand-a" v-if="c.suggested_answer">A：{{ c.suggested_answer }}</div>
+          <div class="cand-a" v-else style="color:#dc2626">（暂无建议答案——知识缺口，请补充答案后入库）</div>
+          <div v-if="c.review_note" style="font-size:12px;color:#9ca3af;margin-bottom:8px">备注：{{ c.review_note }}</div>
+          <div v-if="c.status === 'pending'" style="display:flex;gap:8px">
+            <button class="btn sm primary" @click="openApprove(c)">✔ 编辑并入库</button>
+            <button class="btn sm danger" @click="rejectCandidate(c)">✘ 驳回</button>
+          </div>
+          <div v-else style="font-size:12px;color:#6b7280">
+            {{ c.status === 'approved' ? '✅ 已入库知识库 #' + c.kb_entry_id : '已驳回' }}
+          </div>
+        </div>
+        <div v-if="!candidates.length" class="empty">暂无{{ {pending: '待审核', approved: '已通过', rejected: '已驳回'}[candStatus] }}候选。点击「开始分析历史会话」从对话中挖掘新知识。</div>
+      </div>
+
+      <!-- ⑤b 主动提醒中心 -->
+      <div v-show="tab === 'reminders'">
+        <div class="page-title">📣 主动服务提醒
+          <button class="btn sm primary" @click="scanReminders">▶ 立即扫描</button>
+          <select v-model="reminderFilter" @change="loadReminders"
+                  style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px">
+            <option value="">全部状态</option>
+            <option value="pending">待处理</option>
+            <option value="done">已处理</option>
+          </select>
+          <span style="font-size:12px;color:#6b7280">系统每 30 分钟自动扫描：保修到期 / 保养周期 / 差评回访；退换货状态变化即时推送</span>
+        </div>
+        <table class="data">
+          <thead><tr><th>类型</th><th>标题</th><th>内容</th><th>对象</th><th>客户</th><th>关联单号</th><th>时间</th><th>状态</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="r in reminders" :key="r.id">
+              <td><span class="tag" :class="{orange: r.type === 'warranty_expiry', green: r.type === 'maintenance', blue: r.type === 'rma_update', red: r.type === 'low_rating_followup'}">{{ r.type_name }}</span></td>
+              <td style="max-width:220px">{{ r.title }}</td>
+              <td style="max-width:300px;font-size:12px;color:#6b7280">{{ r.content }}</td>
+              <td>{{ r.audience === 'customer' ? '客户通知' : '内部任务' }}</td>
+              <td>{{ r.customer_name || '-' }}</td>
+              <td>{{ r.related_no || '-' }}</td>
+              <td>{{ r.created_at }}</td>
+              <td><span class="tag" :class="{green: r.status === 'done'}">{{ r.status === 'done' ? '已处理' : '待处理' }}</span></td>
+              <td><button v-if="r.status === 'pending'" class="btn sm" @click="doneReminder(r)">标记处理</button></td>
+            </tr>
+            <tr v-if="!reminders.length"><td colspan="9" class="empty">暂无提醒，点击「立即扫描」生成</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ⑥会话记录 -->
+      <div v-show="tab === 'conversations'">
+        <div class="page-title">💬 会话记录
+          <button class="btn sm" @click="loadConvs">刷新</button>
+          <button class="btn sm" @click="downloadCsv('conversations')">⬇ 导出CSV</button>
+        </div>
+        <table class="data">
+          <thead><tr><th>ID</th><th>标题</th><th>客户</th><th>状态</th><th>结果</th><th>质检</th><th>标签</th><th>时间</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="c in convs" :key="c.id">
+              <td>{{ c.id }}</td>
+              <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.title }}</td>
+              <td>{{ c.customer_name }}</td>
+              <td><span class="tag" :class="{green: c.status === 'active'}">{{ c.status === 'active' ? '进行中' : '已结束' }}</span></td>
+              <td>
+                <span v-if="c.handed_off" class="tag orange">转人工</span>
+                <span v-else-if="c.resolved === true" class="tag green">已解决</span>
+                <span v-else-if="c.resolved === false" class="tag red">未解决</span>
+                <span v-else class="tag">-</span>
+              </td>
+              <td>
+                <span v-if="c.qa" class="tag" :title="(c.qa.issues || []).join('；')"
+                      :class="{green: c.qa.score >= 85, orange: c.qa.score >= 70 && c.qa.score < 85, red: c.qa.score < 70}">
+                  {{ c.qa.score }}分</span>
+                <button v-else class="btn sm" :disabled="qaRunning === c.id"
+                        @click="runQa(c)">{{ qaRunning === c.id ? '质检中…' : '质检' }}</button>
+              </td>
+              <td><span v-for="t in (c.tags || []).slice(0, 2)" class="tag" style="margin-right:4px">{{ t }}</span></td>
+              <td>{{ c.created_at }}</td>
+              <td><button class="btn sm" @click="viewConversation(c.id)">回放</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工单详情抽屉 -->
+  <template v-if="ticketDetail">
+    <div class="drawer-mask" @click="ticketDetail = null"></div>
+    <div class="drawer">
+      <div class="page-title">{{ ticketDetail.ticket_no }}
+        <span class="tag blue">{{ ticketDetail.status }}</span></div>
+      <p style="font-weight:600;margin-bottom:6px">{{ ticketDetail.title }}</p>
+      <p style="color:#6b7280;font-size:13px;white-space:pre-wrap;margin-bottom:14px">{{ ticketDetail.description }}</p>
+      <p style="font-size:13px;margin-bottom:14px">
+        客户：{{ ticketDetail.customer_name }} ｜ 分类：{{ ticketDetail.category }} ｜ 优先级：{{ ticketDetail.priority }}
+        <a v-if="ticketDetail.conversation_id" href="#" style="color:#2563eb;margin-left:8px"
+           @click.prevent="viewConversation(ticketDetail.conversation_id)">查看关联会话</a>
+      </p>
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <button v-for="ns in ticketDetail.next_statuses" :key="ns" class="btn sm primary"
+                @click="moveTicketDetail(ns)">→ {{ ns }}</button>
+      </div>
+      <h4 style="margin-bottom:10px">处理流水</h4>
+      <div class="timeline">
+        <div v-for="(e, i) in ticketDetail.events" :key="i" class="tl-item">
+          <div><strong>{{ e.to }}</strong> <span style="color:#9ca3af">by {{ e.operator }}</span></div>
+          <div v-if="e.note" style="color:#6b7280">{{ e.note }}</div>
+          <div class="tl-time">{{ e.time }}</div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- RMA 详情抽屉 -->
+  <template v-if="rmaDetail">
+    <div class="drawer-mask" @click="rmaDetail = null"></div>
+    <div class="drawer">
+      <div class="page-title">{{ rmaDetail.rma_no }}
+        <span class="tag blue">{{ rmaDetail.status }}</span></div>
+      <p style="font-size:13px;line-height:2">
+        类型：{{ rmaDetail.type }}<br>商品：{{ rmaDetail.product }}（订单 {{ rmaDetail.order_no }}）<br>
+        客户：{{ rmaDetail.customer_name }}<br>原因：{{ rmaDetail.reason }}<br>
+        <template v-if="rmaDetail.refund_amount">退款金额：¥{{ rmaDetail.refund_amount }}<br></template>
+      </p>
+      <div style="display:flex;gap:8px;margin:14px 0 18px">
+        <button v-for="ns in rmaDetail.next_statuses" :key="ns" class="btn sm primary"
+                @click="moveRmaDetail(ns)">→ {{ ns }}</button>
+      </div>
+      <h4 style="margin-bottom:10px">处理流水</h4>
+      <div class="timeline">
+        <div v-for="(e, i) in rmaDetail.events" :key="i" class="tl-item">
+          <div><strong>{{ e.to }}</strong> <span style="color:#9ca3af">by {{ e.operator }}</span></div>
+          <div v-if="e.note" style="color:#6b7280">{{ e.note }}</div>
+          <div class="tl-time">{{ e.time }}</div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 手册预览抽屉 -->
+  <template v-if="manualPreview">
+    <div class="drawer-mask" @click="manualPreview = null"></div>
+    <div class="drawer">
+      <div class="page-title">📖 {{ manualPreview.doc.title }}
+        <span class="tag">{{ manualPreview.chunks.length }} 个知识块</span></div>
+      <div v-for="c in manualPreview.chunks" :key="c.seq" style="margin-bottom:14px">
+        <div style="font-size:12px;color:#92400e;margin-bottom:3px">
+          #{{ c.seq }}<template v-if="c.section"> · {{ c.section }}</template></div>
+        <div style="font-size:13px;color:#374151;background:#f9fafb;border-radius:8px;padding:10px 12px;white-space:pre-wrap">{{ c.content }}</div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 会话回放抽屉 -->
+  <template v-if="convReplay">
+    <div class="drawer-mask" @click="convReplay = null"></div>
+    <div class="drawer">
+      <div class="page-title">会话回放 #{{ convReplay.conversation.id }}</div>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:14px">
+        {{ convReplay.conversation.title }} ｜ {{ convReplay.conversation.created_at }}
+        <span v-if="convReplay.conversation.summary"><br>摘要：{{ convReplay.conversation.summary }}</span>
+      </p>
+      <div v-for="m in convReplay.messages" :key="m.id" style="margin-bottom:14px">
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:3px">
+          {{ m.role === 'user' ? '🙂 客户' : (m.role === 'notice' ? '📢 系统' : (m.agent_name ? '👩‍💼 ' + m.agent_name : '🤖 AI客服')) }} · {{ m.created_at }}
+          <span v-if="m.feedback" :style="{color: m.feedback === 'up' ? '#16a34a' : '#dc2626'}">
+            {{ m.feedback === 'up' ? '👍客户点赞' : '👎客户点踩' }}</span>
+        </div>
+        <div v-if="m.tool_calls && m.tool_calls.length" class="tool-badges">
+          <span v-for="(t, i) in m.tool_calls" :key="i" class="tool-badge" :class="{ok: t.ok}">
+            <span class="dot"></span>{{ t.label }} <span class="summary">{{ t.summary }}</span></span>
+        </div>
+        <img v-if="m.image" :src="m.image" style="max-width:200px;border-radius:8px;margin-bottom:4px;display:block">
+        <div class="bubble" style="max-width:100%" v-html="renderText(m.text)"></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 知识库编辑弹窗 -->
+  <div v-if="kbModal.show" class="modal-mask" @click.self="kbModal.show = false">
+    <div class="modal" style="width:560px">
+      <h3>{{ kbModal.id ? '编辑知识条目' : '新增知识条目' }}</h3>
+      <div class="form-row"><label>标题</label><input v-model="kbModal.title"></div>
+      <div class="form-row"><label>标准问题</label><input v-model="kbModal.question"></div>
+      <div class="form-row"><label>答案</label><textarea v-model="kbModal.answer" style="min-height:140px"></textarea></div>
+      <div style="display:flex;gap:10px">
+        <div class="form-row" style="flex:1"><label>分类</label>
+          <select v-model="kbModal.category"><option v-for="c in kbCategories" :value="c">{{ c }}</option></select></div>
+        <div class="form-row" style="flex:1"><label>状态</label>
+          <select v-model="kbModal.status"><option value="published">发布</option><option value="draft">草稿</option><option value="disabled">停用</option></select></div>
+      </div>
+      <div class="form-row"><label>标签（逗号分隔）</label><input v-model="kbModal.tags"></div>
+      <div class="modal-actions">
+        <button class="btn" @click="kbModal.show = false">取消</button>
+        <button class="btn primary" @click="saveKb">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 候选审核弹窗 -->
+  <div v-if="approveModal.show" class="modal-mask" @click.self="approveModal.show = false">
+    <div class="modal" style="width:560px">
+      <h3>审核入库（可编辑后入库）</h3>
+      <div class="form-row"><label>标准问题</label><input v-model="approveModal.question"></div>
+      <div class="form-row"><label>答案（必填）</label><textarea v-model="approveModal.answer" style="min-height:140px"></textarea></div>
+      <div class="form-row"><label>分类</label>
+        <select v-model="approveModal.category"><option v-for="c in kbCategories" :value="c">{{ c }}</option></select></div>
+      <div class="modal-actions">
+        <button class="btn" @click="approveModal.show = false">取消</button>
+        <button class="btn primary" @click="submitApprove">✔ 通过并入库</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新建工单弹窗 -->
+  <div v-if="ticketModal.show" class="modal-mask" @click.self="ticketModal.show = false">
+    <div class="modal">
+      <h3>新建工单</h3>
+      <div class="form-row"><label>客户</label>
+        <select v-model="ticketModal.customer_id">
+          <option v-for="c in customers" :value="c.id">{{ c.name }}</option></select></div>
+      <div class="form-row"><label>标题</label><input v-model="ticketModal.title"></div>
+      <div class="form-row"><label>描述</label><textarea v-model="ticketModal.description"></textarea></div>
+      <div style="display:flex;gap:10px">
+        <div class="form-row" style="flex:1"><label>分类</label>
+          <select v-model="ticketModal.category">
+            <option v-for="c in ['故障报修','物流咨询','投诉建议','退换货','其他']" :value="c">{{ c }}</option></select></div>
+        <div class="form-row" style="flex:1"><label>优先级</label>
+          <select v-model="ticketModal.priority">
+            <option v-for="p in ['低','中','高','紧急']" :value="p">{{ p }}</option></select></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" @click="ticketModal.show = false">取消</button>
+        <button class="btn primary" @click="createTicket">创建</button>
+      </div>
+    </div>
+  </div>
+
+  </template>
+
+  <div v-if="toast" class="toast">{{ toast }}</div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/admin.js"></script>
+</body>
+</html>

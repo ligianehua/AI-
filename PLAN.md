@@ -588,7 +588,28 @@ POST /api/v1/product-advisor/chat   body: { message, history ≤10 轮 }
 - [ ] 工具选择 eval ≥20 条；SSE 事件序列与容错测试（复用 M9 测试模式）
 - [ ] 全员可用（产品库公共读）；make lint && make test && make eval 全绿
 
-## 7. （P1 规格已全部细化，见 §6.6–§6.12）
+### 6.13 售后中心（M15，外部子系统接入）
+
+**决策**：AI 售后助手是一套已完成的独立系统（FastAPI + SQLite/FTS5 + 无构建 Vue3，
+含客户聊天 Agent、工单状态机、RMA、知识库/手册投喂、自学习闭环、人工客服工作台、
+主动提醒、多渠道 OpenAPI）。采用**服务级接入**而非重写：整体并入仓库 `aftersales/`，
+作为独立容器加入 docker compose（宿主端口 8100），复用 silra 网关
+（OpenAI 兼容接口，MODEL=qwen3-max——README 实测支持工具调用）。
+
+- 入口：主系统导航「售后中心 ↗」新窗口打开 `NEXT_PUBLIC_AFTERSALES_URL`（默认 :8100）
+- 密钥：`AFTERSALES_API_KEY` / `AFTERSALES_CHANNEL_KEY`（.env，永不入库）
+- 数据：SQLite + 上传文件在 `aftersales-data` 卷持久化；账号体系独立（admin/agent/ops 三角色）
+- 边界（如实）：与主系统数据不互通（客户/工单各自独立）；深度联动（销售客户 ↔ 售后
+  客户映射、售后工单进销售客户 360 时间线）留待后续里程碑；SQLite 定位单机/小规模
+- lint/test 边界：`aftersales/` 保持原项目风格，不纳入主系统 make lint/test 范围
+
+验收标准：
+- [ ] `docker compose -f docker-compose.prod.yml up -d aftersales` 一键起服务
+- [ ] 管理端（:8100/admin）三角色登录正常；客户聊天页可用
+- [ ] 真实 LLM 对话冒烟（silra/qwen3-max 工具调用）
+- [ ] 主系统导航入口可达；主系统 lint/test/E2E 不受影响
+
+## 7. （P1 规格已全部细化，见 §6.6–§6.13）
 
 ## 8. 里程碑与执行顺序
 
@@ -611,6 +632,7 @@ POST /api/v1/product-advisor/chat   body: { message, history ≤10 轮 }
 | M12 | 业绩分析 | §6.10 前后端：月度指标对比 + AI 归因解读 | §6.10 验收清单全过 |
 | M13 | AI 产品分析助手 | §6.11 前后端：产品库 + 规格抽取 + 对比 + 替代挖掘 | §6.11 验收清单全过 |
 | M14 | AI 产品咨询助手 | §6.12 前后端：双角色产品咨询对话 | §6.12 验收清单全过 |
+| M15 | 售后中心接入 | §6.13：aftersales 子系统并入 compose + 导航入口 | §6.13 验收清单全过 |
 
 ## 9. 目录结构
 
